@@ -15,7 +15,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
+DEBUG = os.getenv('DEBUG') == True
 
+def show_toolbar(request):
+    return True
+
+DEBUG_TOOLBAR_CONFIG = { 
+    "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+ }
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,7 +36,7 @@ SECRET_KEY = 'django-insecure-^xtffyt0m#ptf63))fiq6^d0#=v(96s^-%b&mkne(0tzd#p69-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -41,10 +48,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'reports',
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

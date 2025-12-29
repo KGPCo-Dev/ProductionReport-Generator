@@ -1,10 +1,19 @@
-Django
-supabase
+# Base Framework
+Django>=4.2,<5.2
+
+# Database Connection (Supabase/Postgres)
+psycopg2-binary
+dj-database-url
+python-dotenv
+
+# Data Processing & Excel
 pandas
 openpyxl
 XlsxWriter
 django-import-export
-python-dotenv
+
+# Production Server
 gunicorn
-psycopg2
-dj-database-url
+
+# Development Tools
+django-debug-toolbar

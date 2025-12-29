@@ -34,27 +34,31 @@
     {% if results %}
         <h2>Resultados ({{ results.count }} registros encontrados)</h2>
         <table>
-            <!-- CORRECCIÓN: La etiqueta correcta es thead (Table Head), no thread -->
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Fecha</th>
-                    <th>Build</th>
+                    <th>Dia</th>
+                    <th>Fecha de Produccion</th>
+                    <th>Order</th>
+                    <th>Tipo de Cable</th>
                     <th>Empleado</th>
-                    <th>Resultado</th>
-                    <th>Workplace</th>
+                    <th>Estacion</th>
+                    <th>Celda</th>
+                    <th>Turno</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in results %}
                 <tr>
-                    <td>{{ item.id }}</td>
-                    <td>{{ item.entered_date }}</td>
-                    <!-- CORRECCIÓN: buil_id -> build_id (error de dedo) -->
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.adjusted_day }}</td>
+                    <td>{{ item.adjusted_date }}</td>
                     <td>{{ item.build_id }}</td>
+                    <td>{{ item.cable_type }}</td>
                     <td>{{ item.employee_number }}</td>
-                    <td>{{ item.result_status }}</td>
                     <td>{{ item.workplace }}</td>
+                    <td>{{ item.production_cell }}</td>
+                    <td>{{ item.production_shift }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
