@@ -5,15 +5,20 @@ import openpyxl
 from django.utils import timezone
 from django.db import connection
 
+def diffetchall(cursor):
+    columns = [col[0] for col in cursor.description]
+    return [ 
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+     ]
+
 def report_produccion_view(request):
     results = None
     start_date = request.POST.get('start_date')
     end_date = request.POST.get('end_date')
 
     if request.method == 'POST':
-        print("--- DEBUG: Se recibió una petición POST ---")
         if start_date and end_date:
-            print(f"--- DEBUG: Fechas recibidas: {start_date} hasta {end_date} ---")
 
             query = """
                 SELECT
@@ -36,10 +41,14 @@ def report_produccion_view(request):
                     results.production_shift
                 FROM public.kgp_test2_results results
                 JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
-                WHERE results.workplace IS NOT NULL
+                WHERE (results.entered_date - INTERVAL '7 hours')::DATE BETWEEN %s AND %s
+                AND results.workplace IS NOT NULL
                 AND results.result_status != 'Rework'
                 ORDER BY results.entered_date;
             """
+            with connection.cursor() as cursor:
+                cursor.execute(query, [start_date, end_date])
+                results = diffetchall(cursor)
 
             if 'export' in request.POST:
                 return export_to_excel(results)
@@ -64,7 +73,7 @@ def export_to_excel(data):
 
     for row in data:
 
-        date = row['entered_date']
+        date = row.get('entered_date')
         if date:
             date = timezone.localtime(date).replace(tzinfo=None)
 
@@ -72,12 +81,12 @@ def export_to_excel(data):
             date,
             row['adjusted_day'],
             row['adjusted_date'],
-            row['build_id'],
-            row['cable_type'],
-            row['employee_number'],
-            row['workplace'],
-            row['production_cell'],
-            row['production_shift']
+            row.get('build_id'),
+            row.get('cable_type'),
+            row.get('employee_number'),
+            row.get('workplace'),
+            row.get('production_cell'),
+            row.get('production_shift')
 
          ])
     

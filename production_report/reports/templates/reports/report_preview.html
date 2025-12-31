@@ -32,7 +32,7 @@
     </div>
 
     {% if results %}
-        <h2>Resultados ({{ results.count }} registros encontrados)</h2>
+        <h2>Resultados ({{ results.length }} registros encontrados)</h2>
         <table>
             <thead>
                 <tr>
@@ -50,7 +50,7 @@
             <tbody>
                 {% for item in results %}
                 <tr>
-                    <td>{{ item.date }}</td>
+                    <td>{{ item.entered_date }}</td>
                     <td>{{ item.adjusted_day }}</td>
                     <td>{{ item.adjusted_date }}</td>
                     <td>{{ item.build_id }}</td>
