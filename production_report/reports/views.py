@@ -12,15 +12,21 @@ def diffetchall(cursor):
         for row in cursor.fetchall()
      ]
 
-def report_produccion_view(request):
+def production_report_view(request):
     results = None
     start_date = request.POST.get('start_date')
     end_date = request.POST.get('end_date')
+    shift = request.POST.get('shift', 'all')
 
     if request.method == 'POST':
         if start_date and end_date:
+            params = [start_date, end_date]
+            shift_clause = ""
+            if shift in ['1', '2']:
+                shift_clause = "AND results.production_shift = %s"
+                params.append(int(shift))
 
-            query = """
+            query = f"""
                 SELECT
                     results.entered_date,
                     CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
@@ -41,23 +47,25 @@ def report_produccion_view(request):
                     results.production_shift
                 FROM public.kgp_test2_results results
                 JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
-                WHERE (results.entered_date - INTERVAL '7 hours')::DATE BETWEEN %s AND %s
-                AND results.workplace IS NOT NULL
-                AND results.result_status != 'Rework'
+                WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
+                    AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
+                    AND results.workplace IS NOT NULL
+                    AND results.result_status != 'Rework'
+                    {shift_clause}
                 ORDER BY results.entered_date;
             """
             with connection.cursor() as cursor:
-                cursor.execute(query, [start_date, end_date])
+                cursor.execute(query, params)
                 results = diffetchall(cursor)
 
             if 'export' in request.POST:
                 return export_to_excel(results)
     
-    print(f"--- DEBUG: Valor final de 'results' antes del render: {results} ---")
     return render(request, 'reports/report_preview.html', { 
         'results': results,
         'start_date': start_date,
-        'end_date': end_date
+        'end_date': end_date,
+        'shift': shift
      })
 
 def export_to_excel(data):

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Inicio - KGPCo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="card shadow-sm p-5">
+            <h1 class="mb-4">Selecciona una operacion</h1>
+            <a href="{% url 'production_report' %}" class="btn btn-primary btn-lg">Reporte de produccion</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

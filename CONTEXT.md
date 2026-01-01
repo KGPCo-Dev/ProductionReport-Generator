@@ -13,6 +13,7 @@ The main goal is to create a web application using Django to generate production
   - `dj-database-url`
   - `psycopg2-binary`
   - `supabase`
+  - `bootstrap`
 
 ## Current Status
 - The Django project structure has been created.

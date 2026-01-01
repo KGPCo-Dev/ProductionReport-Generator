@@ -25,6 +25,13 @@
             <label for="end_date">Fecha final</label>
             <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required >
 
+            <label for="shift">Turno:</label>
+            <select name="shift" id="shift">
+                <option value ="all" {% if shift == 'all' %}selected{% endif %}>Ambos turnos</option>
+                <option value ="1" {% if shift == '1' %}selected{% endif %}>Turno 1</option>
+                <option value ="2" {% if shift == '2' %}selected{% endif %}>Turno 2</option>
+            </select>
+
             <button type ="submit" name="preview">Buscar</button>
             <button type ="submit" name="export" style="background-color: green; color: white;">Descargar reporte</button>
 
@@ -32,7 +39,7 @@
     </div>
 
     {% if results %}
-        <h2>Resultados ({{ results.length }} registros encontrados)</h2>
+        <h2>Resultados ({{ results|length }} registros encontrados)</h2>
         <table>
             <thead>
                 <tr>

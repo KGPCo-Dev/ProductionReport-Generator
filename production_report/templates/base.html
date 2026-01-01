@@ -1,0 +1,49 @@
+{% load django_bootstrap5 %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KGPCo Portal{% endblock %}</title>
+
+    {% bootstrap_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root { 
+            --kgp-blue: #0056b3;
+            --bg-light: #f8f9fa;
+         }
+         body { 
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: #333;
+          }
+          .navbar-custom { 
+            background-color: var(--kgp-blue);
+           }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'home' %}">KGPCo Production</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer class="text-center mt-5 py-3 text-muted">
+        <small>&copy; {% now "Y" %} KGPCo - Sistema de Reportes</small>
+    </footer>
+
+    {% bootstrap_javascript %}
+    {% block extra_js %}{% endblock %}
+
+</body>
+</html>

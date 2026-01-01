@@ -18,10 +18,12 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import include, path
 from reports import views
+from home.views import home_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('reporte-produccion/', views.report_produccion_view, name='reporte_produccion')
+    path('', home_view, name ='home'),
+    path('production-report/', views.production_report_view, name='production_report')
 ]
 
 if settings.DEBUG:
