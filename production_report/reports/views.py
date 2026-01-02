@@ -75,5 +75,5 @@ def export_to_excel(data, headers, filename_prefix="Reporte", sheet_name="Result
                 value = timezone.localtime(value).replace(tzinfo=None)
 
             row_data.append(value)
-    ws.save(response)
+    wb.save(response)
     return response
