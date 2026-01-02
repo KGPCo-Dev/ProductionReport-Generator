@@ -5,7 +5,7 @@ import openpyxl
 from django.utils import timezone
 from django.db import connection
 
-def diffetchall(cursor):
+def dicfetchall(cursor):
     columns = [col[0] for col in cursor.description]
     return [ 
         dict(zip(columns, row))
@@ -14,6 +14,7 @@ def diffetchall(cursor):
 
 def production_report_view(request):
     results = None
+    headers = None
     start_date = request.POST.get('start_date')
     end_date = request.POST.get('end_date')
     shift = request.POST.get('shift', 'all')
@@ -28,7 +29,7 @@ def production_report_view(request):
 
             query = f"""
                 SELECT
-                    results.entered_date,
+                    results.entered_date AS "Fecha de Registro",
                     CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
                         WHEN 0 THEN 'Domingo'
                         WHEN 1 THEN 'Lunes'
@@ -37,14 +38,14 @@ def production_report_view(request):
                         WHEN 4 THEN 'Jueves'
                         WHEN 5 THEN 'Viernes'
                         WHEN 6 THEN 'Sábado'
-                    END AS adjusted_day,
-                    (results.entered_date - INTERVAL '7 hours')::DATE AS adjusted_date,
-                    results.build_id,
-                    orders.cable_type,
-                    results.employee_number,
-                    results.workplace,
-                    results.production_cell,
-                    results.production_shift
+                    END AS "Dia",
+                    (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha de Produccion",
+                    results.build_id AS "Orden",
+                    orders.cable_type AS "Tipo de Cable",
+                    results.employee_number AS "Empleado",
+                    results.workplace AS "Estacion",
+                    results.production_cell AS "Celda",
+                    results.production_shift AS "Turno"
                 FROM public.kgp_test2_results results
                 JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
                 WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
@@ -56,13 +57,17 @@ def production_report_view(request):
             """
             with connection.cursor() as cursor:
                 cursor.execute(query, params)
-                results = diffetchall(cursor)
+                results = dicfetchall(cursor)
+
+                if results:
+                    headers = [col[0] for col in cursor.description]
 
             if 'export' in request.POST:
                 return export_to_excel(results)
     
     return render(request, 'reports/report_preview.html', { 
         'results': results,
+        'headers': headers,
         'start_date': start_date,
         'end_date': end_date,
         'shift': shift
@@ -76,19 +81,25 @@ def export_to_excel(data):
     ws = wb.active
     ws.title = "Resultados de Produccion"
 
-    columns = ['Fecha', 'Dia', 'Fecha de Produccion', 'Order', 'Tipo de Cable', 'Empleado', 'Estacion', 'Celda', 'Turno']
+    columns = ['Fecha de Registro', 'Dia', 'Fecha de Produccion', 'Order', 'Tipo de Cable', 'Empleado', 'Estacion', 'Celda', 'Turno']
     ws.append(columns)
 
     for row in data:
 
-        date = row.get('entered_date')
-        if date:
-            date = timezone.localtime(date).replace(tzinfo=None)
+
+        registered_date = row.get('Fecha de Registro')
+        if registered_date and hasattr(registered_date, 'tzinfo'):
+            registered_date = timezone.localtime(registered_date).replace(tzinfo=None)
+        
+        production_date = row.get('Fecha de Produccion')
+        if production_date and hasattr(production_date, 'tzinfo'):
+            production_date = timezone.localtime(production_date).replace(tzinfo=None)
+
 
         ws.append([ 
-            date,
-            row['adjusted_day'],
-            row['adjusted_date'],
+            registered_date,
+            row['Dia'],
+            production_date,
             row.get('build_id'),
             row.get('cable_type'),
             row.get('employee_number'),

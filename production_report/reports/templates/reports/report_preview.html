@@ -1,22 +1,11 @@
-<!DOCTYPE html>
-<html>
+{% extends 'base.html' %}
+{% block title %}Inicio - KGPCo{% endblock %}
 
-<head>
-    <title>Reporte de Produccion</title>
-    
-    <style>
-        table {width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #add; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .form-container { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; }
-    </style>
-</head>
-<body>
-
+{% block content %}
     <h1>Generador de Reportes de Produccion</h1>
 
     <div>
-        <form method="post">
+        <form id="report-form" method="post">
             {% csrf_token %}
 
             <label for="start_date">Fecha de incio:</label>
@@ -38,42 +27,46 @@
         </form>
     </div>
 
-    {% if results %}
-        <h2>Resultados ({{ results|length }} registros encontrados)</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Dia</th>
-                    <th>Fecha de Produccion</th>
-                    <th>Order</th>
-                    <th>Tipo de Cable</th>
-                    <th>Empleado</th>
-                    <th>Estacion</th>
-                    <th>Celda</th>
-                    <th>Turno</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in results %}
-                <tr>
-                    <td>{{ item.entered_date }}</td>
-                    <td>{{ item.adjusted_day }}</td>
-                    <td>{{ item.adjusted_date }}</td>
-                    <td>{{ item.build_id }}</td>
-                    <td>{{ item.cable_type }}</td>
-                    <td>{{ item.employee_number }}</td>
-                    <td>{{ item.workplace }}</td>
-                    <td>{{ item.production_cell }}</td>
-                    <td>{{ item.production_shift }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% elif results is not None %}
-        <p>No se encontraron resultados para este rango de fechas.</p>
-    {% endif %}
-    
-</body>
+    <div id="loading-spinner" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="mt-2 text-muted fw-bold"></span>
+        </div>
+        <p class="mt-2 text-muted fw-bold">Procesando...</p>
+    </div>
 
-</html>
+    <div id="table-container" style="display: none;">
+        {% include "includes/dynamic_table.html" with headers=headers results=results %}
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        $(document).ready(function(){ 
+            // Corregimos el selector para que use el ID del formulario
+            $('#report-form').on('submit', function() { 
+                $('#table-container').hide();
+                $('#loading-spinner').show();
+             });
+
+            if ($('#dynamicTable').length) { 
+                // Mostramos el spinner mientras DataTables inicializa la tabla
+                $('#loading-spinner').show();
+                $('#dynamicTable').DataTable({ 
+                    "pageLength": 10,
+                    "language": { 
+                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                     },
+                     "initComplete": function(settings, json) { 
+                        $('#loading-spinner').fadeOut(200, function() { 
+                            $('#table-container').fadeIn(400);
+                         });
+                      }
+                 });
+             } else { 
+                $('#loading-spinner').hide();
+              }
+         });
+    </script>
+{% endblock %}
+        

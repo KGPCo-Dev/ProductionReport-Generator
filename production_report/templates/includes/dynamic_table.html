@@ -1,0 +1,39 @@
+
+
+{% if results %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+
+        <table id="dynamicTable" class="table table-hover align-middle mb-0 custom-table">
+            <thead class="table-kgp text-white">
+                <tr>
+                    {% for header in headers %}
+                        <th class="py-3 px-4">{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in results %}
+                <tr>
+                    {% for value in row.values %}
+                        <td class="px-4 py-3">
+                            {{ value|default:"-" }}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ headers|length }}" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="bi bi-search d-block fs-2 mb-2"></i>
+                            No se encontraron registros con los filtros seleccionados.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
