@@ -8,6 +8,12 @@
         <form id="report-form" method="post">
             {% csrf_token %}
 
+            <label for="report_type">Tipo de Reporte:</label>
+            <select name="report_type" id="report_type">
+                <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion de Tethers</option>
+                <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap</option>
+            </select>
+
             <label for="start_date">Fecha de incio:</label>
             <input type="date" id="start_date" name ="start_date" value="{{ start_date }}" required >
             
