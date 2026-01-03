@@ -18,12 +18,12 @@ def dicfetchall(cursor):
 def production_report_view(request):
     results = None
     headers = None
-    report_type = request.POST.get('report_type', 'production_report')
-    start_date = request.POST.get('start_date')
-    end_date = request.POST.get('end_date')
-    shift = request.POST.get('shift', 'all')
+    report_type = request.GET.get('report_type', 'production_report')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    shift = request.GET.get('shift', 'all')
 
-    if request.method == 'POST':
+    if request.method == 'GET':
         if start_date and end_date:
             params = [start_date, end_date]
             shift_clause = ""
@@ -41,7 +41,7 @@ def production_report_view(request):
                 if results:
                     headers = [col[0] for col in cursor.description]
 
-            if 'export' in request.POST:
+            if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
 
     return render(request, 'reports/report_preview.html', { 
@@ -73,7 +73,7 @@ def export_to_excel(data, headers, filename_prefix="Reporte", sheet_name="Result
             value = row.get(header)
             if value and hasattr(value, 'tzinfo'):
                 value = timezone.localtime(value).replace(tzinfo=None)
-
             row_data.append(value)
+        ws.append(row_data)
     wb.save(response)
     return response

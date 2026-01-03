@@ -2,77 +2,77 @@
 {% block title %}Inicio - KGPCo{% endblock %}
 
 {% block content %}
-    <h1>Generador de Reportes de Produccion</h1>
+<h1>Generador de Reportes de Produccion</h1>
 
-    <div>
-        <form id="report-form" method="post">
-            {% csrf_token %}
+<div>
+    <form id="report-form" method="get">
 
-            <label for="report_type">Tipo de Reporte:</label>
-            <select name="report_type" id="report_type">
-                <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion de Tethers</option>
-                <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap</option>
-            </select>
+        <label for="report_type">Tipo de Reporte:</label>
+        <select name="report_type" id="report_type">
+            <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion
+                de Tethers</option>
+            <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap
+            </option>
+        </select>
 
-            <label for="start_date">Fecha de incio:</label>
-            <input type="date" id="start_date" name ="start_date" value="{{ start_date }}" required >
-            
-            <label for="end_date">Fecha final</label>
-            <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required >
+        <label for="start_date">Fecha de incio:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
 
-            <label for="shift">Turno:</label>
-            <select name="shift" id="shift">
-                <option value ="all" {% if shift == 'all' %}selected{% endif %}>Ambos turnos</option>
-                <option value ="1" {% if shift == '1' %}selected{% endif %}>Turno 1</option>
-                <option value ="2" {% if shift == '2' %}selected{% endif %}>Turno 2</option>
-            </select>
+        <label for="end_date">Fecha final</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
 
-            <button type ="submit" name="preview">Buscar</button>
-            <button type ="submit" name="export" style="background-color: green; color: white;">Descargar reporte</button>
+        <label for="shift">Turno:</label>
+        <select name="shift" id="shift">
+            <option value="all" {% if shift == 'all' %}selected{% endif %}>Ambos turnos</option>
+            <option value="1" {% if shift == '1' %}selected{% endif %}>Turno 1</option>
+            <option value="2" {% if shift == '2' %}selected{% endif %}>Turno 2</option>
+        </select>
 
-        </form>
+        <button type="submit" name="preview">Buscar</button>
+        <button type="submit" name="export" style="background-color: green; color: white;">Descargar reporte</button>
+
+    </form>
+</div>
+
+<div id="loading-spinner" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="mt-2 text-muted fw-bold"></span>
     </div>
+    <p class="mt-2 text-muted fw-bold">Procesando...</p>
+</div>
 
-    <div id="loading-spinner" class="text-center my-5">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="mt-2 text-muted fw-bold"></span>
-        </div>
-        <p class="mt-2 text-muted fw-bold">Procesando...</p>
-    </div>
-
-    <div id="table-container" style="display: none;">
-        {% include "includes/dynamic_table.html" with headers=headers results=results %}
-    </div>
+<div id="table-container" style="display: none;">
+    {% include "includes/dynamic_table.html" with headers=headers results=results %}
+</div>
 
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        $(document).ready(function(){ 
-            // Corregimos el selector para que use el ID del formulario
-            $('#report-form').on('submit', function() { 
-                $('#table-container').hide();
-                $('#loading-spinner').show();
-             });
+<script>
+    $(document).ready(function () {
+        // Corregimos el selector para que use el ID del formulario
+        $('#report-form').on('submit', function () {
+            $('#table-container').hide();
+            $('#loading-spinner').show();
+        });
 
-            if ($('#dynamicTable').length) { 
-                // Mostramos el spinner mientras DataTables inicializa la tabla
-                $('#loading-spinner').show();
-                $('#dynamicTable').DataTable({ 
-                    "pageLength": 10,
-                    "language": { 
-                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                     },
-                     "initComplete": function(settings, json) { 
-                        $('#loading-spinner').fadeOut(200, function() { 
-                            $('#table-container').fadeIn(400);
-                         });
-                      }
-                 });
-             } else { 
-                $('#loading-spinner').hide();
-              }
-         });
-    </script>
+        if ($('#dynamicTable').length) {
+            // Mostramos el spinner mientras DataTables inicializa la tabla
+            $('#loading-spinner').show();
+            $('#dynamicTable').DataTable({
+                "pageLength": 10,
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                },
+                "initComplete": function (settings, json) {
+                    $('#loading-spinner').fadeOut(200, function () {
+                        $('#table-container').fadeIn(400);
+                    });
+                }
+            });
+        } else {
+            $('#loading-spinner').hide();
+        }
+    });
+</script>
 {% endblock %}
-        
