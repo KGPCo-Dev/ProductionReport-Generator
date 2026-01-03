@@ -26,7 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name ='home'),
     path('production-report/', views.production_report_view, name='production_report'),
-    path('order-tracker/', order_tracker_view, name='order_tracker')
+    path('order-tracker/', include('order_tracker.urls'))
 ]
 
 if settings.DEBUG:
