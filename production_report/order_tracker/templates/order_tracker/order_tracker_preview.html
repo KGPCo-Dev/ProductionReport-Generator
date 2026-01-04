@@ -1,12 +1,18 @@
-{% extends 'base.html' %}
-{% block title %}Inicio - KGPCo{% endblock %}
-
+{% extends 'base.html' %} 
+{% block title %}Inicio - KGPCo{% endblock %} 
 {% block content %}
-<h1>Consulta de estatus de orden</h1>
+  <h1>Consulta estatus de orden</h1>
 
-<div>
-    <form id="order-tracker-form" method="post">
+  <div class="search-container">
 
+    <form id="order-search-bar" action="/search" method="get" role="search">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Buscar order(Build ID)..." name="search">
+        <button class="btn btn-primary" type="submit">
+          <i class="bi bi search"></i>
+        </button>
+      </div>
     </form>
-</div>
+
+  </div>
 {% endblock %}

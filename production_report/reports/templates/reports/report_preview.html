@@ -50,14 +50,14 @@
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        // Corregimos el selector para que use el ID del formulario
+        
         $('#report-form').on('submit', function () {
             $('#table-container').hide();
             $('#loading-spinner').show();
         });
 
         if ($('#dynamicTable').length) {
-            // Mostramos el spinner mientras DataTables inicializa la tabla
+            
             $('#loading-spinner').show();
             $('#dynamicTable').DataTable({
                 "pageLength": 10,

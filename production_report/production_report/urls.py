@@ -18,15 +18,13 @@ from unicodedata import name
 from django.contrib import admin
 from django.conf import settings
 from django.urls import include, path
-from reports import views
 from home.views import home_view
-from order_tracker.views import order_tracker_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name ='home'),
-    path('production-report/', views.production_report_view, name='production_report'),
-    path('order-tracker/', include('order_tracker.urls'))
+    path('production-report/', include('reports.urls')),
+    path('order-tracker/', include('order_tracker.urls')),
 ]
 
 if settings.DEBUG:
