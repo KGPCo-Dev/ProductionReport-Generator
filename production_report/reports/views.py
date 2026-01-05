@@ -1,8 +1,5 @@
-from datetime import tzinfo
-from email.utils import localtime
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import KgpTest2Results
 import openpyxl
 from django.utils import timezone
 from django.db import connection
