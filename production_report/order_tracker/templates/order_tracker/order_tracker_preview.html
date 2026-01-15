@@ -19,10 +19,22 @@
   </div>
 
   {% if build_id %}
-    <div>
-       Resultados de la orden: <strong>{{ build_id }}</strong>
-    </div>
+    {% if results %}
+      <div id="table-container" style="display: none;">
+        {% include "includes/dynamic_table.html" with headers=headers results=results %}
+      </div>
+    {% else %}
+        <div class="alert alert-warning text-center mt-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            No se encontró ninguna orden con el ID: <strong>{{ build_id }}</strong>
+        </div>
+    {% endif %}
   {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+    {% include "includes/table_loader_script.html" %}
 {% endblock %}
 
 

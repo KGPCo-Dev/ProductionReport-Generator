@@ -34,13 +34,6 @@
     </form>
 </div>
 
-<div id="loading-spinner" class="text-center my-5">
-    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-        <span class="mt-2 text-muted fw-bold"></span>
-    </div>
-    <p class="mt-2 text-muted fw-bold">Procesando...</p>
-</div>
-
 <div id="table-container" style="display: none;">
     {% include "includes/dynamic_table.html" with headers=headers results=results %}
 </div>
@@ -48,31 +41,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    $(document).ready(function () {
-        
-        $('#report-form').on('submit', function () {
-            $('#table-container').hide();
-            $('#loading-spinner').show();
-        });
-
-        if ($('#dynamicTable').length) {
-            
-            $('#loading-spinner').show();
-            $('#dynamicTable').DataTable({
-                "pageLength": 10,
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                },
-                "initComplete": function (settings, json) {
-                    $('#loading-spinner').fadeOut(200, function () {
-                        $('#table-container').fadeIn(400);
-                    });
-                }
-            });
-        } else {
-            $('#loading-spinner').hide();
-        }
-    });
-</script>
+    {% include "includes/table_loader_script.html" %}
 {% endblock %}
