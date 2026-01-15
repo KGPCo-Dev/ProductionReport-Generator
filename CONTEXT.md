@@ -66,11 +66,7 @@ Success criteria:
 ---
 
 ## Next Steps
-- Create a new app that allows users to:
-  - Search orders
-  - View order status and details
-- All order data already exists in the database.
-
+- Implement CSS to deliver a modern UI experience.
 ---
 
 ## Answer & Interaction Guidelines
