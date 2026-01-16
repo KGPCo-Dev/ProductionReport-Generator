@@ -2,36 +2,61 @@
 {% block title %}Inicio - KGPCo{% endblock %}
 
 {% block content %}
-<h1>Generador de Reportes de Produccion</h1>
 
-<div>
-    <form id="report-form" method="get">
+<div class="hero-card">
 
-        <label for="report_type">Tipo de Reporte:</label>
-        <select name="report_type" id="report_type">
-            <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion
-                de Tethers</option>
-            <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap
-            </option>
-        </select>
+    <h1 class="hero-title">Generador de Reportes de Produccion</h1>
+    <p class="hero-subtitle">Seleccione un rango de fechas para generar un reporte</p>
 
-        <label for="start_date">Fecha de incio:</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
+    <form id="report-form" method="get" class="text-start mt-4">
 
-        <label for="end_date">Fecha final</label>
-        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
+        <div class="row g-3 mb-4 align-items-end">
 
-        <label for="shift">Turno:</label>
-        <select name="shift" id="shift">
-            <option value="all" {% if shift == 'all' %}selected{% endif %}>Ambos turnos</option>
-            <option value="1" {% if shift == '1' %}selected{% endif %}>Turno 1</option>
-            <option value="2" {% if shift == '2' %}selected{% endif %}>Turno 2</option>
-        </select>
+            <div class="row g-3 mb-4 align-items-end">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label fw-bold">Fecha de inicio:</label>
+                    <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}" required>
+                </div>
 
-        <button type="submit" name="preview">Buscar</button>
-        <button type="submit" name="export" style="background-color: green; color: white;">Descargar reporte</button>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label fw-bold">Fecha final:</label>
+                    <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}" required>
+                </div>
 
+                <div class="col-md-4">
+                    <label for="shift" class="form-label fw-bold">Turno:</label>
+                    <select name="shift" id="shift" class="form-select">
+                        <option value="all" {% if shift == 'all' %}selected{% endif %}>Ambos turnos</option>
+                        <option value="1" {% if shift == '1' %}selected{% endif %}>Turno 1</option>
+                        <option value="2" {% if shift == '2' %}selected{% endif %}>Turno 2</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <hr class="my-4"> <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="report_type" class="form-label fw-bold">Tipo de Reporte:</label>
+                    <select name="report_type" id="report_type" class="form-select">
+                        <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion de Tethers</option>
+                        <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <button type="submit" name="preview" class="btn btn-primary px-5">
+                <i class="bi bi-search me-2"></i>Buscar
+            </button>
+            <button type="submit" name="export" class ="btn btn-success px-5">
+                <i class="bi bi-file-earmark-excel me-2"></i>Descargar reporte
+            </button>
+        </div>
+        
     </form>
+
 </div>
 
 <div id="table-container" style="display: none;">

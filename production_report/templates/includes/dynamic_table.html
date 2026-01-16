@@ -1,11 +1,9 @@
-
-
 {% if results %}
 <div class="card shadow-sm border-0">
     <div class="table-responsive">
 
-        <table id="dynamicTable" class="table table-hover table-custom align-middle mb-0 custom-table">
-            <thead class="table-kgp text-white">
+        <table id="dynamicTable" class="table table-custom table-hover align-middle mb-0">
+            <thead class="text-white">
                 <tr>
                     {% for header in headers %}
                         <th class="py-3 px-4">{{ header }}</th>

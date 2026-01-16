@@ -7,7 +7,7 @@ SELECT
     workplace AS "Estacion",
     production_cell AS "Celda",
     production_shift AS "Turno",
-    tethers_completed || ' de ' || tethers_total AS "Progreso de Tethers",
+    tethers_completed || ' de ' || tethers_total AS "Tethers",
     build_attempt AS "Intentos",
     result_status AS "Estatus"
 FROM public.kgp_test2_results

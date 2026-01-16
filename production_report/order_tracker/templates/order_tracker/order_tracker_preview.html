@@ -1,19 +1,16 @@
 {% extends 'base.html' %} 
 {% block title %}Inicio - KGPCo{% endblock %} 
 {% block content %}
-  <h1>Consulta estatus de orden</h1>
-
-  <div class="search-container">
+  
+  <div class="hero-card">
+    <h1 class="hero-title">Consulta estatus de orden</h1>
+    <p class="hero-subtitle">Ingrese el Numero de Orden para ver su estatus en timepo real</p>
 
     <form id="order-search-bar" action="" method="get">
-      <div id="search-bar-div" class="input-group">
-
-        <input type="text" class="form-control" placeholder="Buscar order(Build ID)..." name="search">
-
-        <button class="btn btn-primary" type="submit">
-          <i class="bi bi search"></i>
-        </button>
-      </div>
+      <input type="text" placeholder="Numero de Orden (Build ID)" name="search">
+      <button type="submit">
+        <i class="bi bi-search"></i>
+      </button>
     </form>
 
   </div>
