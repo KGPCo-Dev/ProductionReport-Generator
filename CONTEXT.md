@@ -26,6 +26,8 @@ The goal is to build a **professional, scalable Django web application** that:
 - Tracks **order status**
 - Uses a **Supabase-managed PostgreSQL database**
 - Is designed to be **AWS-ready** in future stages
+- Displays **interactive dashboards** based on filtered data
+- Embeds **charts/graphs** in downloaded Excel files
 
 Success criteria:
 - Clean architecture
@@ -37,7 +39,7 @@ Success criteria:
 
 ## Technology Stack
 - **Backend:** Django 5.1.15
-- **Frontend:** Bootstrap 5
+- **Frontend:** Bootstrap 5, Chart.js
 - **Database:** Supabase (Managed PostgreSQL)
 - **Environment Management:** Python Virtual Environment (`.venv`)
 - **Dependencies:**
@@ -46,6 +48,8 @@ Success criteria:
   - `dj-database-url`
   - `psycopg2-binary`
   - `supabase`
+  - `pandas`
+  - `xlsxwriter`
 
 ---
 
@@ -66,7 +70,7 @@ Success criteria:
 ---
 
 ## Next Steps
-- Implement CSS to deliver a modern UI experience.
+- Implement Dashboard System.
 ---
 
 ## Answer & Interaction Guidelines

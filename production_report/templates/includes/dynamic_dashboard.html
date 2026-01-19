@@ -1,0 +1,34 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() { 
+
+        const ctx = document.getElementById('productionChart').getContext('2d');
+        const data = {{ chart_data|safe }};
+
+        new Chart(ctx, { 
+            type: 'bar',
+            data: { 
+                labels: data.labels,
+                datasets: [{ 
+                    label:data.label,
+                    data:data.data,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                 }]
+             },
+             options: { 
+                responsive: true,
+                maintainAspectRation: false,
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        title: { display: true, text: 'Amount' }
+                     }
+                 }
+              }
+         });
+    });
+</script>

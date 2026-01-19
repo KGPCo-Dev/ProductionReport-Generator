@@ -79,7 +79,11 @@ REPORT_CONFIG = {
     'scrap_report': { 
         'query': SCRAP_REPORT_QUERY,
         'filename': 'Reporte de Scrap',
-        'sheet_name': 'Scrap'
+        'sheet_name': 'Scrap',
+        'chart_config': { 
+            'date_col': 'Fecha del Scrap',
+            'label': 'Piezas Scrapeadas'
+         }
      },
      'production_report': { 
         'query': PRODUCTION_REPORT_QUERY,
@@ -89,6 +93,10 @@ REPORT_CONFIG = {
       'order_status_report': { 
         'query': ORDER_STATUS_QUERY,
         'filename': 'Estatus de Orden',
-        'sheet_name' : 'Order_Status'
+        'sheet_name' : 'Order_Status',
+        'chart_config': { 
+            'date_col': 'Fecha de Registro',
+            'label': 'Piezas Diaria'
+         }
        },
  }

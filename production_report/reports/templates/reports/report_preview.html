@@ -59,12 +59,29 @@
 
 </div>
 
+{% if chart_data %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <h4 class="card-title mb-3">Resumen de Produccion</h4>
+        <div style="height: 400px">
+            <canvas id="productionChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div id="table-container" style="display: none;">
     {% include "includes/dynamic_table.html" with headers=headers results=results %}
 </div>
 
 {% endblock %}
 
-{% block extra_js %}
+{% if chart_data %}
+    {% block dashboard_js %}
+        {% include "includes/dynamic_dashboard.html" %}
+    {% endblock %}
+{% endif %}
+
+{% block table_js %}
     {% include "includes/table_loader_script.html" %}
 {% endblock %}

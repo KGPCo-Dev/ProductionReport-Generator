@@ -4,6 +4,8 @@ import openpyxl
 from django.utils import timezone
 from django.db import connection
 from .queries import REPORT_CONFIG
+import pandas as pd
+import json
 
 def dicfetchall(cursor):
     columns = [col[0] for col in cursor.description]
@@ -14,7 +16,9 @@ def dicfetchall(cursor):
 
 def production_report_view(request):
     results = None
+    results = None
     headers = None
+    chart_data = None
     report_type = request.GET.get('report_type', 'production_report')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -37,6 +41,22 @@ def production_report_view(request):
 
                 if results:
                     headers = [col[0] for col in cursor.description]
+            
+            #We create the structure to render de Dashboard
+            results_df = pd.DataFrame(results, columns=headers)
+            results_df['Fecha de Produccion'] = pd.to_datetime(results_df['Fecha de Produccion'])
+            graph_df = results_df.groupby('Fecha de Produccion').size().reset_index(name='Amount')
+
+            chart_labels = graph_df['Fecha de Produccion'].dt.strftime('%Y-%m-%d').tolist()
+            chart_values = graph_df['Amount'].tolist()
+
+            chart_data = { 
+                'labels': chart_labels,
+                'data': chart_values,
+                'label': 'Produccion Diaria'
+             }
+
+
 
             if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
@@ -47,7 +67,8 @@ def production_report_view(request):
         'start_date': start_date,
         'end_date': end_date,
         'shift': shift,
-        'report_type': report_type
+        'report_type': report_type,
+        'chart_data': json.dumps(chart_data) if chart_data else None
      })
 
 def export_to_excel(data, headers, filename_prefix="Reporte", sheet_name="Resultados"):

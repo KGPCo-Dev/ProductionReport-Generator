@@ -23,14 +23,14 @@
     {% else %}
         <div class="alert alert-warning text-center mt-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            No se encontró ninguna orden con el ID: <strong>{{ build_id }}</strong>
+            No hay escaneos de la orden: <strong>{{ build_id }}</strong>
         </div>
     {% endif %}
   {% endif %}
 
 {% endblock %}
 
-{% block extra_js %}
+{% block table_js %}
     {% include "includes/table_loader_script.html" %}
 {% endblock %}
 
