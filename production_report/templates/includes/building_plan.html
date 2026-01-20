@@ -1,0 +1,63 @@
+<div class="container-fluid py-4">
+
+    <div clas="d-flex align-items-center mb-4">
+        <div class="accent-line me-3"></div>
+        <h1 class="h3 mb-0 fw-bold">Detalles de Orden: <span class="text-primary">{{ build_id }}</span></h1>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
+            <div class="kpi-content">
+                <span class="kpi-label">Tethers</span>
+                <span class="kpi-data">{{ order_details.tethers }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="bi bi-plugin"></i></div>
+            <div class="kpi-content">
+                <span class="kpi-label">Tipo de Cable</span>
+                <span class="kpi-data text-truncate">{{ order_details.cable_type }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="bi bi-wrench-adjustable"></i></div>
+            <div class="kpi-content">
+                <span class="kpi-label">Tipo de Instalacion</span>
+                <span class="kpi-data text-truncate">{{ order_details.installation_type }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="bi bi-bezier2"></i></div>
+            <div class="kpi-content">
+                <span class="kpi-label">Taps</span>
+                <span class="kpi-data">{{ order_details.taps }}</span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="bi bi-cpu"></i></div>
+            <div class="kpi-content">
+                <span class="kpi-label">Fibras</span>
+                <span class="kpi-data">
+                    {{ order_details.fiber_count }}
+                </span>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon"><i class="bi bi-rulers"></i></div>
+            <div class="kpi-content">
+                <span class="kpi-label">Longitud</span>
+                <span class="kpi-data">{{ order_details.cable_length }}</span>
+            </div>
+        </div>
+
+
+    </div>
+
+</div>

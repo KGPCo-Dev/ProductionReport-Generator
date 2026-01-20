@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db import connection
-from reports.queries import REPORT_CONFIG
+from reports.queries import REPORT_CONFIG, ORDER_DETAILS_QUERY
 
 
 def dicfetchall(cursor):
@@ -15,11 +15,12 @@ def order_tracker_view(request):
     build_id = request.GET.get('search')
     report_type = request.GET.get('report_type', 'order_status_report')
     results = None
+    order_details = None
     headers = None
 
     if request.method == 'GET':
         if build_id:
-
+            production_orders_query = ORDER_DETAILS_QUERY
             config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_status_report'])
             query = config['query']
 
@@ -29,10 +30,15 @@ def order_tracker_view(request):
 
                 if results:
                     headers = [col[0] for col in cursor.description]
+            
+            with connection.cursor() as order_details_cursor:
+                order_details_cursor.execute(production_orders_query, [build_id])
+                order_details = dicfetchall(order_details_cursor)
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,
         'results': results,
         'headers': headers,
+        'order_details': order_details,
         'report_type': report_type
      })

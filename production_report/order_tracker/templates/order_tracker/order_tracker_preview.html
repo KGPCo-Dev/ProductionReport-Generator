@@ -3,7 +3,7 @@
 {% block content %}
   
   <div class="hero-card">
-    <h1 class="hero-title">Consulta estatus de orden</h1>
+    <h1 class="hero-title">Consulta detalles y estatus de orden</h1>
     <p class="hero-subtitle">Ingrese el Numero de Orden para ver su estatus en timepo real</p>
 
     <form id="order-search-bar" action="" method="get">
@@ -16,6 +16,11 @@
   </div>
 
   {% if build_id %}
+
+    <div id="building_plan">
+      {% include "includes/building_plan.html" with order_details=order_details.0 build_id=build_id%}
+    </div>
+
     {% if results %}
       <div id="table-container" style="display: none;">
         {% include "includes/dynamic_table.html" with headers=headers results=results %}

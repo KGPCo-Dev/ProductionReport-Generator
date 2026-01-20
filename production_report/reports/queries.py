@@ -1,3 +1,20 @@
+
+ORDER_DETAILS_QUERY = """
+SELECT
+  build_id,
+  tethers,
+  taps,
+  cable_type,
+  cable_length,
+  order_type,
+  installation_type,
+  fiber_count,
+  planned_fibers,
+  spare_fibers
+FROM public.kgp_production_orders
+WHERE build_id = %s
+"""
+
 ORDER_STATUS_QUERY = """
 SELECT
     build_id as "Orden",
@@ -82,13 +99,17 @@ REPORT_CONFIG = {
         'sheet_name': 'Scrap',
         'chart_config': { 
             'date_col': 'Fecha del Scrap',
-            'label': 'Piezas Scrapeadas'
+            'label': 'Tethers Scrap'
          }
      },
      'production_report': { 
         'query': PRODUCTION_REPORT_QUERY,
         'filename': 'Reporte de Produccion',
-        'sheet_name': 'Produccion'
+        'sheet_name': 'Produccion',
+        'chart_config': { 
+            'date_col': 'Fecha de Produccion',
+            'label': 'Tethers Producidos'
+         }
       },
       'order_status_report': { 
         'query': ORDER_STATUS_QUERY,
