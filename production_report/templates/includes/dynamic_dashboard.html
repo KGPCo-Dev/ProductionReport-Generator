@@ -2,6 +2,13 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() { 
 
+        const canvas = document.getElementById('productionChart');
+        if (!canvas) { 
+            console.warn("No se encontro canvas");
+            document.dispatchEvent(new Event('chartReady'));
+            return;
+         }
+         
         const ctx = document.getElementById('productionChart').getContext('2d');
         const data = {{ chart_data|safe }};
 
@@ -21,7 +28,12 @@
              },
              options: { 
                 responsive: true,
-                maintainAspectRation: false,
+                maintainAspectRatio: false,
+                animation: { 
+                    onComplete: function() { 
+                        document.dispatchEvent(new Event('chartReady'));
+                    }
+                 },
                 scales: { 
                     y: { 
                         beginAtZero: true,

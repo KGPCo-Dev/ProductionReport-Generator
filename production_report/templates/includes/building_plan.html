@@ -1,3 +1,4 @@
+{% load static %}
 <div class="container-fluid py-4">
 
     <div clas="d-flex align-items-center mb-4">
@@ -7,12 +8,46 @@
 
     <div class="dashboard-grid">
 
-        <div class="kpi-card">
-            <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
-            <div class="kpi-content">
-                <span class="kpi-label">Tethers</span>
-                <span class="kpi-data">{{ order_details.tethers }}</span>
+        <div class="kpi-group-vertical">
+
+            <div class="items-container">
+                <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
+                <div class="kpi-card-mini">
+                    <span class="kpi-label">Tethers</span>
+                    <span class="kpi-data">{{ order_details.tethers }}</span>
+                </div>
             </div>
+
+            <div class="items-container">
+                <div class="kpi-icon"><i class="bi bi-bezier2"></i></div>
+                <div class="kpi-card-mini">
+                    <span class="kpi-label">Taps</span>
+                    <span class="kpi-data">{{ order_details.taps }}</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="kpi-group-vertical">
+
+            <div class="items-container">
+                <div class="kpi-icon">
+                    <div class="custom-icon-img" style ="-webkit-mask-image:url('{% static 'img/order_type.png' %}'); mask-image: url('{% static 'img/order_type.png' %}');"></div>
+                </div>
+                <div class="kpi-card-mini">
+                    <span class="kpi-label">Tipo de Orden</span>
+                    <span class="kpi-data">{{ order_details.order_type }}</span>
+                </div>
+            </div>
+
+            <div class="items-container">
+                <div class="kpi-icon"><i class="bi bi-building-fill-gear"></i></div>
+                <div class="kpi-card-mini">
+                    <span class="kpi-label">Tipo de Instalacion</span>
+                    <span class="kpi-data">{{ order_details.installation_type }}</span>
+                </div>
+            </div>
+
         </div>
 
         <div class="kpi-card">
@@ -24,23 +59,9 @@
         </div>
 
         <div class="kpi-card">
-            <div class="kpi-icon"><i class="bi bi-wrench-adjustable"></i></div>
-            <div class="kpi-content">
-                <span class="kpi-label">Tipo de Instalacion</span>
-                <span class="kpi-data text-truncate">{{ order_details.installation_type }}</span>
+            <div class="kpi-icon">
+                <div class="custom-icon-img" style ="-webkit-mask-image:url('{% static 'img/fibers_ico.png' %}'); mask-image: url('{% static 'img/fibers_ico.png' %}');"></div>
             </div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-icon"><i class="bi bi-bezier2"></i></div>
-            <div class="kpi-content">
-                <span class="kpi-label">Taps</span>
-                <span class="kpi-data">{{ order_details.taps }}</span>
-            </div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-icon"><i class="bi bi-cpu"></i></div>
             <div class="kpi-content">
                 <span class="kpi-label">Fibras</span>
                 <span class="kpi-data">

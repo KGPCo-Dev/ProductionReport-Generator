@@ -1,3 +1,19 @@
+ORDER_RESULTS_QUERY = """
+SELECT
+  results.build_id AS "Orden",
+  process.process_name AS "Proceso",
+  results.process_start_time AS "Inicio del Proceso",
+  results.process_finish_time AS "Fin del Proceso",
+  results.employee_number AS "Empleado",
+  results.workplace AS "Estacion",
+  results.entered_date::DATE AS "Fecha",
+  results.global_tether AS "Numero de Tether",
+  results.tap_number AS "Locacion"
+FROM public.kpg_production_process_results AS results
+INNER JOIN public.kgp_production_process AS process ON results.process_id = process.process_id
+INNER JOIN public.kgp_production_orders AS orders ON results.build_id = orders.build_id
+WHERE results.build_id = %s;
+"""
 
 ORDER_DETAILS_QUERY = """
 SELECT
@@ -37,7 +53,8 @@ ORDER BY entered_date ASC
 
 SCRAP_REPORT_QUERY = """
 SELECT
-    results.entered_date AS "Fecha de Registro",
+    results.entered_date::DATE AS "Fecha de Registro",
+    TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
     CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
         WHEN 0 THEN 'Domingo'
         WHEN 1 THEN 'Lunes'
@@ -65,7 +82,8 @@ ORDER BY results.entered_date
 
 PRODUCTION_REPORT_QUERY = """
 SELECT
-    results.entered_date AS "Fecha de Registro",
+    results.entered_date::DATE AS "Fecha de Registro",
+    TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
     CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
         WHEN 0 THEN 'Domingo'
         WHEN 1 THEN 'Lunes'
@@ -120,4 +138,13 @@ REPORT_CONFIG = {
             'label': 'Piezas Diaria'
          }
        },
+       'order_process_report': { 
+        'query': ORDER_RESULTS_QUERY,
+        'filename': 'Estatus de Orden',
+        'sheet_name': 'Order_Status',
+        'chart_config': { 
+            'date_col': 'Fecha de Registro',
+            'label': 'Resultados'
+         }
+        },
  }

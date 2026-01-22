@@ -71,6 +71,7 @@ Success criteria:
 
 ## Next Steps
 - Implement Dashboard System.
+- Implement english and spanish lenguage.
 ---
 
 ## Answer & Interaction Guidelines

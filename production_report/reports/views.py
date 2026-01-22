@@ -44,21 +44,24 @@ def production_report_view(request):
             
             #We create the structure to render de Dashboard
             results_df = pd.DataFrame(results, columns=headers)
-            chart_conf = config.get('chart_config')
-            if chart_conf:
-                date_col = chart_conf['date_col']
-
-            results_df[date_col] = pd.to_datetime(results_df[date_col])
-            graph_df = results_df.groupby(date_col).size().reset_index(name='Amount')
-
-            chart_labels = graph_df[date_col].dt.strftime('%Y-%m-%d').tolist()
-            chart_values = graph_df['Amount'].tolist()
-
-            chart_data = { 
-                'labels': chart_labels,
-                'data': chart_values,
-                'label': chart_conf['label']
-             }
+            
+            if not results_df.empty:
+                chart_conf = config.get('chart_config')
+                if chart_conf:
+                    date_col = chart_conf['date_col']
+                    
+                    if date_col in results_df.columns:
+                        results_df[date_col] = pd.to_datetime(results_df[date_col])
+                        graph_df = results_df.groupby(date_col).size().reset_index(name='Amount')
+        
+                        chart_labels = graph_df[date_col].dt.strftime('%Y-%m-%d').tolist()
+                        chart_values = graph_df['Amount'].tolist()
+        
+                        chart_data = { 
+                            'labels': chart_labels,
+                            'data': chart_values,
+                            'label': chart_conf['label']
+                        }
 
             if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])

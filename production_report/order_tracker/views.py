@@ -13,7 +13,7 @@ def dicfetchall(cursor):
 def order_tracker_view(request):
 
     build_id = request.GET.get('search')
-    report_type = request.GET.get('report_type', 'order_status_report')
+    report_type = request.GET.get('report_type', 'order_process_report')
     results = None
     order_details = None
     headers = None
@@ -21,7 +21,7 @@ def order_tracker_view(request):
     if request.method == 'GET':
         if build_id:
             production_orders_query = ORDER_DETAILS_QUERY
-            config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_status_report'])
+            config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_process_report'])
             query = config['query']
 
             with connection.cursor() as cursor:
