@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.db import connection
 from reports.queries import REPORT_CONFIG, ORDER_DETAILS_QUERY
+from reports.models import ProcessNames
 
 
 def dicfetchall(cursor):
@@ -25,13 +26,22 @@ def order_tracker_view(request):
             query = config['query']
 
             with connection.cursor() as cursor:
+                # Process Results Query #
                 cursor.execute(query, [build_id])
                 results = dicfetchall(cursor)
 
                 if results:
                     headers = [col[0] for col in cursor.description]
+
+                    for row in results:
+                        original_name = row['Proceso']
+                        try:
+                            row['Proceso'] = ProcessNames(original_name).label
+                        except ValueError:
+                            row['Proceso'] = f"Desconocido ({original_name})"
             
             with connection.cursor() as order_details_cursor:
+                # Order Details Query #
                 order_details_cursor.execute(production_orders_query, [build_id])
                 order_details = dicfetchall(order_details_cursor)
 

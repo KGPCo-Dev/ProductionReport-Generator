@@ -8,9 +8,13 @@
             document.dispatchEvent(new Event('chartReady'));
             return;
          }
-         
+
         const ctx = document.getElementById('productionChart').getContext('2d');
         const data = {{ chart_data|safe }};
+        var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(13, 110, 253, 0.8)');
+        gradient.addColorStop(1, 'rgba(13, 110, 253, 0.3)');
+
 
         new Chart(ctx, { 
             type: 'bar',
@@ -20,8 +24,10 @@
                     label:data.label,
                     data:data.data,
                     borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    borderWidth: 2,
+                    backgroundColor: gradient,
+                    borderRadius: 8,
+                    borderWidth: 0,
+                    barThickness: 40,
                     tension: 0.3,
                     fill: true
                  }]
@@ -37,7 +43,15 @@
                 scales: { 
                     y: { 
                         beginAtZero: true,
-                        title: { display: true, text: 'Amount' }
+                        grid: { 
+                            color: '#f0f0f0',
+                            borderDash: [5, 5]
+                         },
+                        border: { display: false },
+                        title: { display: true, text: 'Cantidad de Tethers' }
+                     },
+                    x: { 
+                        grid: { display: false }
                      }
                  }
               }

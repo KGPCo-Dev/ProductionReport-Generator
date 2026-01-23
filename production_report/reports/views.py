@@ -6,6 +6,7 @@ from django.db import connection
 from .queries import REPORT_CONFIG
 import pandas as pd
 import json
+from django.utils.formats import date_format
 
 def dicfetchall(cursor):
     columns = [col[0] for col in cursor.description]
@@ -52,9 +53,11 @@ def production_report_view(request):
                     
                     if date_col in results_df.columns:
                         results_df[date_col] = pd.to_datetime(results_df[date_col])
+
+                        #We create a DF based on the results, grouped by Date#
                         graph_df = results_df.groupby(date_col).size().reset_index(name='Amount')
         
-                        chart_labels = graph_df[date_col].dt.strftime('%Y-%m-%d').tolist()
+                        chart_labels = [date_format(date, "Y-F-d") for date in graph_df[date_col]]
                         chart_values = graph_df['Amount'].tolist()
         
                         chart_data = { 

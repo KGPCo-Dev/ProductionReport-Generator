@@ -1,7 +1,18 @@
 from django.db import models
 
-# Create your models here.
-#To insert a new table please use python manage.py inspectdb
+class ProcessNames(models.TextChoices):
+    ACCESS_1 = 'ACCESS_1', 'Access 1'
+    ACCESS_2 = 'ACCESS_2', 'Access 2'
+    SPLICE = 'SPLICE', 'Splice'
+    TEST_1 = 'TEST_1', 'Test 1'
+    PRE_MOLDING = 'PRE_MOLDING', 'Pre-Moldeo'
+    MOLDING = 'MOLDING', 'Moldeo'
+    TEST_2 = 'TEST_2', 'Test 2'
+    PACKAGING = 'PACKAGING', 'Empaque'
+    HANDLING = 'HANDLING', 'Manejador'
+    FINAL_TEST = 'FINAL_TEST', 'Prueba Final'
+    SUB_ASSY = 'SUB_ASSY', 'Sub-Ensamble'
+    CUT ='CUT', 'Corte'
 
 class KgpProductionOrders(models.Model):
     id = models.BigAutoField(primary_key=True)
