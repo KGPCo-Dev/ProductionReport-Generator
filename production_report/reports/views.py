@@ -20,6 +20,7 @@ def production_report_view(request):
     results = None
     headers = None
     chart_data = None
+    production_results = []
     report_type = request.GET.get('report_type', 'production_report')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -69,10 +70,13 @@ def production_report_view(request):
             if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
 
+            production_results = [results, headers]
+
     return render(request, 'reports/report_preview.html', { 
         'results': results,
         'headers': headers,
         'start_date': start_date,
+        'production_results': production_results,
         'end_date': end_date,
         'shift': shift,
         'report_type': report_type,

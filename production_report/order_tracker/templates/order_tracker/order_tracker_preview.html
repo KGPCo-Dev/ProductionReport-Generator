@@ -21,16 +21,30 @@
       {% include "includes/building_plan.html" with order_details=order_details.0 build_id=build_id%}
     </div>
 
-    {% if results %}
+    <!-- Yield System Results -->
+    {% if process_results.0 %}
       <div id="table-container" style="display: none;">
-        {% include "includes/dynamic_table.html" with headers=headers results=results %}
+        {% include "includes/dynamic_table.html" with results=process_results %}
       </div>
     {% else %}
         <div class="alert alert-warning text-center mt-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            No hay escaneos de la orden: <strong>{{ build_id }}</strong>
+            Aun no hay registro de Yield de la orden: <strong>{{ build_id }}</strong>
         </div>
     {% endif %}
+
+    <!-- Test2 Results -->
+    {% if test2_results.0 %}
+      <div id="table-container" style="display: none;">
+        {% include "includes/dynamic_table.html" with results=test2_results %}
+      </div>
+    {% else %}
+        <div class="alert alert-warning text-center mt-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            No hay escaneos de tethers de la orden: <strong>{{ build_id }}</strong>
+        </div>
+    {% endif %}
+
   {% endif %}
 
 {% endblock %}
