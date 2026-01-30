@@ -1,5 +1,46 @@
+ORDER_FAIL_RESULTS_QUERY = """
+SELECT
+  results.build_id,
+  results.global_tether,
+  results.process_id,
+  fails.fail_description,
+  results.fail_amount
+FROM public.kpg_process_fails results
+JOIN public.kgp_process_fail_codes fails
+  ON results.fail_id = fails.fail_id
+WHERE results.build_id = %s
+ORDER by results.fail_amount DESC
+"""
+
+FINAL_TEST_REPORT_QUERY = """
+SELECT
+  results.build_id AS "Orden",
+  results.employee_number AS "Empleado",
+  results.workplace AS "Mesa",
+  results.production_shift AS "Turno",
+  results.entered_date::date AS "Fecha de Registro",
+  TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
+  orders.fiber_count AS "Fibras totales",
+  results.passed_fibers AS "Fibras aprobadas",
+  CASE
+    WHEN results.finished IS true THEN 'Terminado'
+    ELSE 'No terminado'
+  END AS "Estatus",
+  CASE
+    WHEN results.failed_fibers = '' THEN  '0'
+  END AS "Fibras fallidas"
+FROM public.kgp_finaltest_results results
+JOIN public.kgp_production_orders orders
+  ON results.build_id = orders.build_id
+WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
+    AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
+    {shift_clause}
+ORDER BY results.entered_date
+"""
+
 ORDER_RESULTS_QUERY = """
 SELECT
+  results.process_id,
   results.build_id AS "Orden",
   process.process_name AS "Proceso",
   results.process_start_time AS "Inicio del Proceso",
@@ -12,7 +53,7 @@ SELECT
 FROM public.kpg_production_process_results AS results
 INNER JOIN public.kgp_production_process AS process ON results.process_id = process.process_id
 INNER JOIN public.kgp_production_orders AS orders ON results.build_id = orders.build_id
-WHERE results.build_id = %s;
+WHERE results.build_id = %s
 """
 
 ORDER_DETAILS_QUERY = """
@@ -107,7 +148,7 @@ WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
     AND results.workplace IS NOT NULL
     AND results.result_status IS DISTINCT  FROM 'Rework'
     {shift_clause}
-ORDER BY results.entered_date;
+ORDER BY results.entered_date
 """
 
 REPORT_CONFIG = { 
@@ -119,8 +160,8 @@ REPORT_CONFIG = {
             'date_col': 'Fecha del Scrap',
             'label': 'Tethers Scrap'
          }
-     },
-     'production_report': { 
+    },
+    'production_report': { 
         'query': PRODUCTION_REPORT_QUERY,
         'filename': 'Reporte de Produccion',
         'sheet_name': 'Produccion',
@@ -128,23 +169,41 @@ REPORT_CONFIG = {
             'date_col': 'Fecha de Produccion',
             'label': 'Tethers Producidos'
          }
-      },
-      'order_status_report': { 
+    },
+    'order_status_results': { 
         'query': ORDER_STATUS_QUERY,
-        'filename': 'Estatus de Orden',
-        'sheet_name' : 'Order_Status',
+        'filename': 'Resultados de Orden',
+        'sheet_name': 'Order_Results',
         'chart_config': { 
             'date_col': 'Fecha de Registro',
             'label': 'Piezas Diaria'
          }
-       },
-       'order_process_report': { 
+    },
+    'order_process_results': { 
         'query': ORDER_RESULTS_QUERY,
-        'filename': 'Estatus de Orden',
-        'sheet_name': 'Order_Status',
+        'filename': 'Resultados de Orden',
+        'sheet_name': 'Order_Results',
         'chart_config': { 
             'date_col': 'Fecha de Registro',
             'label': 'Resultados'
          }
-        },
+    },
+    'final_test_report': { 
+        'query': FINAL_TEST_REPORT_QUERY,
+        'filename': 'Reporte Final Test',
+        'sheet_name': 'Final Test',
+        'chart_config': { 
+            'date_col': 'Fecha de Registro',
+            'label': 'Fibras'
+        }
+    },
+    'order_fail_results': { 
+        'query': ORDER_FAIL_RESULTS_QUERY,
+        'filename': 'Resultados de Orden',
+        'sheet_name': 'Order_Results',
+        'chart_config': { 
+            'date_col': 'Fecha de Registro',
+            'label': 'Resultados'
+         }
+    },
  }

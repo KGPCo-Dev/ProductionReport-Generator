@@ -39,6 +39,7 @@
                     <label for="report_type" class="form-label fw-bold">Tipo de Reporte:</label>
                     <select name="report_type" id="report_type" class="form-select">
                         <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion de Tethers</option>
+                        <option value="final_test_report" {% if report_type == 'final_test_report' %}selected{% endif %}>Resultados Final Test</option>
                         <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap</option>
                     </select>
                 </div>

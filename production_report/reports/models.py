@@ -14,6 +14,8 @@ class ProcessNames(models.TextChoices):
     SUB_ASSY = 'SUB_ASSY', 'Sub-Ensamble'
     CUT ='CUT', 'Corte'
 
+
+
 class KgpProductionOrders(models.Model):
     id = models.BigAutoField(primary_key=True)
     entered_date = models.DateTimeField()
@@ -125,3 +127,43 @@ class KgpTest2Results(models.Model):
     class Meta:
         managed = False
         db_table = 'kgp_test2_results'
+
+class KpgProcessFails(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build_id', blank=True, null=True)
+    global_tether = models.IntegerField(blank=True, null=True)
+    entered_date = models.DateTimeField()
+    employee_number = models.BigIntegerField(blank=True, null=True)
+    workplace = models.TextField(blank=True, null=True)
+    process = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
+    fail = models.ForeignKey(KgpProcessFailCodes, models.DO_NOTHING)
+    fail_amount = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'kpg_process_fails'
+
+class KgpFinaltestResults(models.Model):
+    entered_date = models.DateTimeField()
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build_id')
+    employee_number = models.BigIntegerField(blank=True, null=True)
+    workplace = models.TextField(blank=True, null=True)
+    passed_fibers = models.BigIntegerField(blank=True, null=True)
+    failed_fibers = models.TextField(blank=True, null=True)
+    finished = models.BooleanField(blank=True, null=True)
+    scrap = models.BooleanField(blank=True, null=True)
+    updated_date = models.TextField(blank=True, null=True)
+    id = models.BigAutoField(primary_key=True)
+    production_hour = models.SmallIntegerField(blank=True, null=True)
+    production_shift = models.SmallIntegerField(blank=True, null=True)
+    scrap_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='scrap_auditor', to_field='employee_number', blank=True, null=True)
+    scrap_0 = models.ForeignKey('KgpScrapCodes', models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
+    fail = models.ForeignKey('KgpProcessFailCodes', models.DO_NOTHING, blank=True, null=True)
+    hold_time_total = models.IntegerField(blank=True, null=True)
+    active_time_total = models.IntegerField(blank=True, null=True)
+    time_total = models.IntegerField(blank=True, null=True)
+    rework_auditor = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_finaltest_results'

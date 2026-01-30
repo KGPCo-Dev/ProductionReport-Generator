@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db import connection
-from reports.queries import REPORT_CONFIG, ORDER_DETAILS_QUERY
+from reports.queries import REPORT_CONFIG, ORDER_DETAILS_QUERY, ORDER_FAIL_RESULTS_QUERY
 from reports.models import ProcessNames
 
 
@@ -14,7 +14,7 @@ def dicfetchall(cursor):
 def order_tracker_view(request):
 
     build_id = request.GET.get('search')
-    report_type = request.GET.get('report_type', 'order_process_report')
+    report_type = request.GET.get('report_type', 'order_process_results')
     test2_report_type = request.GET.get('report_type', 'production_report')
     results = None
     order_details = None
@@ -46,22 +46,34 @@ def order_tracker_view(request):
 
 def get_process_results(request, build_id):
 
-    report_type = request.GET.get('report_type', 'order_process_report')
+    report_type = request.GET.get('report_type', 'order_process_results')
     print("report_type value on process_results:", report_type)
 
-    config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_process_report'])
+    config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_process_results'])
     query = config['query']
     
     results = []
     headers = []
 
-    with connection.cursor() as cursor:
-        cursor.execute(query, [build_id])
-        results = dicfetchall(cursor)
+    fails_reuslts_query = ORDER_FAIL_RESULTS_QUERY
+
+    with connection.cursor() as fails_results_cursor:
+        fails_results_cursor.execute(fails_reuslts_query, [build_id])
+        fails_results = dicfetchall(fails_results_cursor)
+
+        print("Fail results from DB: ", fails_results)
+
+        if fails_results:
+            fails_headers = [col[0] for col in fails_results_cursor.description]
+
+    with connection.cursor() as process_results_cursor:
+        process_results_cursor.execute(query, [build_id])
+        results = dicfetchall(process_results_cursor)
 
         if results:
-            headers = [col[0] for col in cursor.description]
+            headers = [col[0] for col in process_results_cursor.description]
 
+            # ProcesName is assigned isted of use proces.id number #
             for row in results:
                 original_name = row['Proceso']
                 try:
@@ -76,10 +88,10 @@ def get_process_results(request, build_id):
 
 def get_test2_results(request, build_id):
 
-    report_type = request.GET.get('report_type', 'order_status_report')
+    report_type = request.GET.get('report_type', 'order_status_results')
     print("report_type value on test2_results:", report_type)
 
-    config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_status_report'])
+    config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_status_results'])
     query = config['query']
     
     results = []
