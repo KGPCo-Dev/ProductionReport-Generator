@@ -2,7 +2,7 @@
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
             
-            <table id="process_results_table" class="table table-custom table-hover align-middle mb-0">
+            <table id="processTable" class="table table-custom table-hover align-middle mb-0">
                 <thead class="text-white">
                     <tr>
                         {% for header in results.1 %}
@@ -27,8 +27,11 @@
                                 {% if key != 'fails' and key != 'process_id' %}
                                     <td class="px-4 py-3">
                                         <div class="d-flex align-items-center"> {% if key == 'Orden' and row.fails %}
-                                                <button class="btn btn-sm p-0 me-2 text-primary border-0">
-                                                        
+                                                <button class="btn btn-sm p-0 me-2 text-primary border-0"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#fails-row-{{ forloop.parentloop.counter }}">
+                                                    <i class="bi bi-chevron-right btn-toggle-icon"></i>
                                                 </button>
                                             {% endif %}
 
@@ -39,29 +42,33 @@
                         </tr>
                         {% if row.fails %}
                             <tr class="collapse" id="fails-row-{{ forloop.counter }}">
-                                <td colspan="100" class="p-0 border-0">
-                                    <div class="p-3 big-light">
-                                        <div class="p-4 bg-light text-dark">
-
-                                            <div class="table-responsive rounded shadow-sm">
-                                                <table class="table table-sm mb-0">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class="px-3" style="color: #ffffffff;">Incidencia</th>
-                                                            <th class="text-center px-3" style="color: #ffffffff; width: 100px;">Intentos</th>
+                                <td colspan="100" class="p-0 border-0 bg-light">
+                                    <div class="px-5 py-4 border-start border-primary border-4">
+                                        <h6 class="mb-3 text-dark fw-bold">
+                                            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                            Registro de Incidencias
+                                        </h6>
+                                        <div class="table-responsive rounded-3 shadow-sm bg-white">
+                                            <table class="table table-sm table-borderless mb-0">
+                                                <thead class="bg-dark text-white">
+                                                    <tr>
+                                                       <th class="ps-3 py-2">Incidencia</th>
+                                                       <th class="text-center py-2" style="width: 120px;">Intentos</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for falla in row.fails %}
+                                                        <tr class="{% cycle 'bg-orange-subtle' '' %} border-bottom">
+                                                            <td class="ps-3 py-2 text-secondary">{{ falla.Descripcion }}</td>
+                                                            <td class="text-center py-2">
+                                                                <span class="badge rounded-pill bg-danger-subtle text-danger">
+                                                                    {{ falla.Intentos }}
+                                                                </span>
+                                                            </td>
                                                         </tr>
-                                                    </thead>
-                                                    <tbody class="bg-white">
-                                                        {% for falla in row.fails %}
-                                                            <tr class="{% cycle 'bg-white' 'bg-orange-subtle' %}">
-                                                                <td class="px-3 py-2 border-bottom-0">{{ falla.Descripcion }}</td>
-
-                                                                <td class="text-center py-2 fw-bold text-danger border-bottom-0">{{ falla.Intentos }}</td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </td>
