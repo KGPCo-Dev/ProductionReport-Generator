@@ -21,19 +21,24 @@ def order_tracker_view(request):
     headers = None
     test2_results = None
     process_results = None
+    order_progress = None
 
     if request.method == 'GET':
         if build_id:
 
-            process_results = get_process_results(request, build_id)
-            test2_results = get_test2_results(request, build_id)
-            
             production_orders_query = ORDER_DETAILS_QUERY
-
             with connection.cursor() as order_details_cursor:
                 # Order Details Query #
                 order_details_cursor.execute(production_orders_query, [build_id])
                 order_details = dicfetchall(order_details_cursor)
+
+            process_results = get_process_results(request, build_id)
+            test2_results = get_test2_results(request, build_id)
+
+            if order_details and process_results and process_results[0]:
+                order_progress = order_current_state(order_details, process_results)
+
+
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,
@@ -127,3 +132,11 @@ def get_test2_results(request, build_id):
     test2_results = [results, headers]
 
     return test2_results
+
+def order_current_state(order_details, process_results):
+
+    order_progress = {}
+
+    total_tethers = int(order_details[0].get('tethers', 0))
+
+    return order_progress
