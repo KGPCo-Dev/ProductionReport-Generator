@@ -139,4 +139,17 @@ def order_current_state(order_details, process_results):
 
     total_tethers = int(order_details[0].get('tethers', 0))
 
+    # We create a set:
+    # {1, 2} Means tether 1 and 2 were scanned on Test 2, so they should appear as completed on the status viewer #
+    scanned_tethers = { 
+        row['Numero de Tether']
+        for row in process_results[0]
+        if str(row.get('Proceso', '')).upper() in ['TEST_2', 'TEST 2']
+     }
+
+    order_progress['tethers'] = [
+        {'id': i, 'completed': i in scanned_tethers}
+        for i in range(1, total_tethers + 1)
+     ]
+
     return order_progress
