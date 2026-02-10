@@ -47,13 +47,14 @@ SELECT
   results.process_finish_time AS "Fin del Proceso",
   results.employee_number AS "Empleado",
   results.workplace AS "Estacion",
-  results.entered_date::DATE AS "Fecha",
+  results.entered_date AS "Fecha",
   results.global_tether AS "Numero de Tether",
   results.tap_number AS "Locacion"
 FROM public.kpg_production_process_results AS results
 INNER JOIN public.kgp_production_process AS process ON results.process_id = process.process_id
 INNER JOIN public.kgp_production_orders AS orders ON results.build_id = orders.build_id
 WHERE results.build_id = %s
+ORDER BY results.entered_date DESC
 """
 
 ORDER_DETAILS_QUERY = """

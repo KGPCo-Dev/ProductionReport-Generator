@@ -7,51 +7,109 @@
 
 <script>
     $(document).ready(function () { 
-        var tableReady = $('#dynamicTable').length === 0;
-        var chartReady = $('#productionChart').length === 0;
+        // Desactivar alertas molestas de DataTables (solo log en consola si hay error)
+        $.fn.dataTable.ext.errMode = 'none';
+
+        // Identificar tablas en el DOM
+        var $processTable = $('#processTable');
+        var $dynamicTable = $('#dynamicTable'); // Tabla de test2 o resultados generales
+        var $chart = $('#productionChart');
+
+        // Estado inicial (si no existe la tabla, se considera lista "ready=true")
+        var processReady = $processTable.length === 0;
+        var dynamicReady = $dynamicTable.length === 0;
+        var chartReady = $chart.length === 0;
 
         function checkAllReady() { 
-            console.log("tableReady val:", tableReady, "chartReady val:", chartReady)
-            if (tableReady && chartReady) {
-                console.log("Iniciando UI")
+            // console.log("Status -> Process:", processReady, "Dynamic:", dynamicReady, "Chart:", chartReady);
+            
+            if (processReady && dynamicReady && chartReady) {
+                // console.log("Todo listo. Mostrando UI.");
                 $('#loading-spinner').fadeOut(200, function() { 
-                    $('#table-container').fadeIn(400);
+                    // Mostrar todos los contenedores de tablas marcados con la clase común
+                    $('.js-table-container').fadeIn(400);
                     $('#dashboard-container').fadeIn(400);
                 });
             }
         }
 
+        // Listener para gráficas (si existen)
         document.addEventListener('chartReady', function() { 
             chartReady = true;
             checkAllReady();
         });
 
-        if ($('#dynamicTable').length) { 
+        // Configuración de idioma en español (objeto local para evitar CORS)
+        var spanishLanguage = {
+            "processing": "Procesando...",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "zeroRecords": "No se encontraron resultados",
+            "emptyTable": "Ningún dato disponible en esta tabla",
+            "info": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+            "infoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+            "infoFiltered": "(filtrado de un total de _MAX_ registros)",
+            "search": "Buscar:",
+            "infoThousands": ",",
+            "loadingRecords": "Cargando...",
+            "paginate": {
+                "first": "Primero",
+                "last": "Último",
+                "next": "Siguiente",
+                "previous": "Anterior"
+            },
+            "aria": {
+                "sortAscending": ": Activar para ordenar la columna de manera ascendente",
+                "sortDescending": ": Activar para ordenar la columna de manera descendente"
+            }
+        };
+
+        // 1. Inicializar Process Table (Test Results / Yield)
+        // Nota: Desactivamos 'ordering' porque las filas colapsables (acordeón) rompen la indexación de DataTables
+        if ($processTable.length) { 
             $('#loading-spinner').show();
-            $('#dynamicTable').DataTable ({ 
+            console.log("Inicializando Process Table...");
+            $processTable.DataTable ({ 
                 "pageLength": 10,
-                "language": { 
-                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                 },
-                 "initComplete": function(settings, json) { 
-                    tableReady = true;
+                "ordering": false, // CRÍTICO: Evita el error _DT_CellIndex con filas colapsables
+                "language": spanishLanguage,
+                "initComplete": function(settings, json) { 
+                    processReady = true;
                     checkAllReady();
-                  }
-             });
-        } else { 
-            if(chartReady) $('#loading-spinner').hide(); 
+                }
+            });
         }
 
+        // 2. Inicializar Dynamic Table (Test2 u otros reportes)
+        if ($dynamicTable.length) { 
+            $('#loading-spinner').show();
+            console.log("Inicializando Dynamic Table...");
+            $dynamicTable.DataTable ({ 
+                "pageLength": 10,
+                "language": spanishLanguage,
+                "initComplete": function(settings, json) { 
+                    dynamicReady = true;
+                    checkAllReady();
+                }
+            });
+        }
+
+        // Si no hay nada que cargar, ocultar spinner inmediatamente
+        if (processReady && dynamicReady && chartReady) {
+            $('#loading-spinner').hide();
+        }
+
+        // Resetear al enviar formulario
         $('form').on('submit', function () { 
             if ($(this).attr('method').toLowerCase() === 'get') { 
-                $('#table-container').hide();
+                $('.js-table-container').hide();
                 $('#dashboard-container').hide();
                 $('#loading-spinner').show();
 
-                tableReady = false;
+                processReady = false;
+                dynamicReady = false;
                 chartReady = false;
-             }
-         });
+            }
+        });
 
      });
 </script>

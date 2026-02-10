@@ -15,10 +15,7 @@ def order_tracker_view(request):
 
     build_id = request.GET.get('search')
     report_type = request.GET.get('report_type', 'order_process_results')
-    test2_report_type = request.GET.get('report_type', 'production_report')
-    results = None
     order_details = None
-    headers = None
     test2_results = None
     process_results = None
     order_progress = None
@@ -39,6 +36,8 @@ def order_tracker_view(request):
                 order_progress = tethers_status(order_details, process_results)
 
 
+    print("Los resultados de los tethers:", order_progress)
+    print("Process results:", process_results)
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,
@@ -53,7 +52,6 @@ def order_tracker_view(request):
 def get_process_results(request, build_id):
 
     report_type = request.GET.get('report_type', 'order_process_results')
-    print("report_type value on process_results:", report_type)
 
     # DB connection and config is created #
     config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_process_results'])
@@ -100,13 +98,11 @@ def get_process_results(request, build_id):
                     and fail['global_tether'] == row['Numero de Tether']
                 ]
 
+
+    
     # Delete process_id value from headers if it exists #
     if results:
-        headers_process= headers.pop(0)
-
-    print("Resultados en views: ", results)
-    print("Headers en views: ", headers)
-
+        headers_process = headers.pop(0)
 
     process_results = [results, headers]
 
@@ -164,10 +160,10 @@ def tethers_status(order_details, process_results):
         tethers_scans = [r for r in results if r.get('Numero de Tether') == i]
 
         if tethers_scans:
-            lastest = max(tethers_scans, key=lambda x: x.get('process_id', 0))
+            lastest = max(tethers_scans, key=lambda x: x.get('Fecha'))
             last_process = lastest.get('process_id', 0)
 
-            percentage = (last_process / 9) * 100
+            percentage = (last_process / 8) * 100
             if percentage > 100: percentage = 100
 
             tethers_data.update({
@@ -175,7 +171,7 @@ def tethers_status(order_details, process_results):
                 'current_process': lastest.get('Proceso', 'Sin registrar'),
                 'workplace': lastest.get('Estacion', '-'),
                 'location': lastest.get('Locacion', 'Sin montar'),
-                'is_complete': last_process >= 9
+                'is_complete': last_process >= 8
              })
         tethers_status.append(tethers_data)    
 
