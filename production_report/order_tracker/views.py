@@ -36,7 +36,7 @@ def order_tracker_view(request):
             test2_results = get_test2_results(request, build_id)
 
             if order_details and process_results and process_results[0]:
-                order_progress = order_current_state(order_details, process_results)
+                order_progress = tethers_status(order_details, process_results)
 
 
 
@@ -45,7 +45,8 @@ def order_tracker_view(request):
         'process_results': process_results,
         'test2_results': test2_results,
         'order_details': order_details,
-        'report_type': report_type
+        'report_type': report_type,
+        'order_progress': order_progress
      })
 
 
@@ -133,23 +134,49 @@ def get_test2_results(request, build_id):
 
     return test2_results
 
-def order_current_state(order_details, process_results):
+def tethers_status(order_details, process_results):
 
-    order_progress = {}
+    # In order to get the data for the TetherStatusView we need:
+    #   tethers_status: List  of dict with the current state of oders's tethers
+    #   total_tethers: oreder's tethers to render the amount of them
+    #   results: we get the progress for current order
+    #   tethers_data: dict with current status of each tether#
 
-    total_tethers = int(order_details[0].get('tethers', 0))
+    tethers_status = []
 
-    # We create a set:
-    # {1, 2} Means tether 1 and 2 were scanned on Test 2, so they should appear as completed on the status viewer #
-    scanned_tethers = { 
-        row['Numero de Tether']
-        for row in process_results[0]
-        if str(row.get('Proceso', '')).upper() in ['TEST_2', 'TEST 2']
-     }
+    try:
+        total_tethers = int(order_details[0].get('tethers', 0))
+    except (ValueError, IndexError, TypeError):
+        total_tethers = 0
 
-    order_progress['tethers'] = [
-        {'id': i, 'completed': i in scanned_tethers}
-        for i in range(1, total_tethers + 1)
-     ]
+    results = process_results[0] if process_results and process_results[0] else []
+    
+    for i in range(1, total_tethers + 1):
+        tethers_data = { 
+            'number': i,
+            'percentage': 0,
+            'current_process': 'Sin registrar',
+            'workplace': '-',
+            'location': 'Sin montar',
+            'is_complete': False
+        }
 
-    return order_progress
+        tethers_scans = [r for r in results if r.get('Numero de Tether') == i]
+
+        if tethers_scans:
+            lastest = max(tethers_scans, key=lambda x: x.get('process_id', 0))
+            last_process = lastest.get('process_id', 0)
+
+            percentage = (last_process / 9) * 100
+            if percentage > 100: percentage = 100
+
+            tethers_data.update({
+                'percentage': int(percentage),
+                'current_process': lastest.get('Proceso', 'Sin registrar'),
+                'workplace': lastest.get('Estacion', '-'),
+                'location': lastest.get('Locacion', 'Sin montar'),
+                'is_complete': last_process >= 9
+             })
+        tethers_status.append(tethers_data)    
+
+    return tethers_status

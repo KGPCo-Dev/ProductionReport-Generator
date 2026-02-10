@@ -13,34 +13,6 @@ from django.test import TestCase
 from django.db import connection
 from reports.queries import ORDER_RESULTS_QUERY, ORDER_FAIL_RESULTS_QUERY,ORDER_DETAILS_QUERY
 
-def order_current_state(order_details, order_results):
-
-    process_results = order_results
-    progress_context = {}
-    try:
-        # Validamos que existan tethers
-        total_tethers = int(order_details[0].get('tethers', 0))
-        
-        # SET de tethers completados (usamos set para búsqueda O(1))
-        completed_tethers = {
-            row['Numero de Tether'] 
-            for row in process_results[0] 
-            if str(row.get('Proceso', '')).upper() in ['TEST_2', 'TEST 2']
-        }
-        # Generamos la lista de objetos para el template
-        progress_context['tethers'] = [
-            {'id': i, 'completed': i in completed_tethers}
-            for i in range(1, total_tethers + 1)
-        ]
-        # Ultimo proceso registrado (el primero de la lista ordenada)
-        progress_context['latest_process'] = process_results[0][0].get('Proceso', 'Inicio')
-        
-        # Calculamos porcentaje
-        progress_context['percent'] = (len(completed_tethers) / total_tethers * 100) if total_tethers > 0 else 0
-        return progress_context
-    except (ValueError, IndexError, TypeError) as e:
-        print(f"Error en order_current_state: {e}")
-        return None
 
 # Create your tests here.
 def dictfetchall(cursor):
@@ -90,9 +62,48 @@ for row in order_results:
         and fail['global_tether'] == row['Numero de Tether']
      ]
 
-if order_details and order_results and order_results[0]:
-    order_progress = order_current_state(order_details, order_results)
+process_results = [order_results, order_results_headers]
 
-print("ORDE results VALUE BASE", order_progress)
+
+tethers_list = []
+
+try:
+    total_tethers = int(order_details[0].get('tethers', 0))
+except (ValueError, IndexError, TypeError):
+    total_tethers = 0
+
+results = process_results[0] if process_results and process_results[0] else[0]
+
+for i in range(1, total_tethers + 1):
+    tethers_data = { 
+        'number': i,
+        'percentage': 0,
+        'current_process': 'not_assigned',
+        'workplace': '-',
+        'location': 'Sin montar',
+        'is_complete': False
+     }
+
+    tethers_scans = [r for r in results if r.get('Numero de Tether') == i]
+
+    if tethers_scans:
+        lastest = max(tethers_scans, key=lambda x: x.get('process_id', 0))
+        max_pid = lastest.get('process_id', 0)
+
+        percentage = (max_pid / 9) * 100
+        if percentage > 100: percentage = 100
+
+        tethers_data.update({ 
+            'percentage': int(percentage),
+            'current_process': lastest.get('Proceso', 'Desconocido'),
+            'workplace': lastest.get('Estacion', '-'),
+            'location': lastest.get('Locacion', '-'),
+            'is_complete': max_pid >= 9
+         })
+    tethers_list.append(tethers_data)
+
+
+
+print("Tethers_data value", tethers_list)
 
 
