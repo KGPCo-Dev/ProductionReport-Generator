@@ -39,6 +39,7 @@ def production_report_view(request):
 
             with connection.cursor() as cursor:
                 cursor.execute(query, params)
+                
                 results = dicfetchall(cursor)
 
                 if results:
@@ -86,6 +87,10 @@ def production_report_view(request):
 def export_to_excel(data, headers, filename_prefix="Reporte", sheet_name="Resultados"):
     if not data or not headers:
         return HttpResponse("No hay datos para exportar")
+
+    headers.append("Tethers")
+    for result in data:
+        result['Tethers'] = 1
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename="{filename_prefix}.xlsx"'

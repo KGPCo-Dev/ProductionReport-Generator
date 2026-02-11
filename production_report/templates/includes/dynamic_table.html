@@ -6,7 +6,9 @@
             <thead class="text-white">
                 <tr>
                     {% for header in results.1 %}
-                        <th class="py-3 px-4">{{ header }}</th>
+                        {% if not forloop.first %}
+                            <th class="py-3 px-4">{{ header }}</th>
+                        {% endif %}
                     {% endfor %}
                 </tr>
             </thead>
@@ -15,14 +17,16 @@
                 {% for row in results.0 %}
                 <tr>
                     {% for value in row.values %}
-                        <td class="px-4 py-3">
-                            {{ value|default:"-" }}
-                        </td>
+                        {% if not forloop.first %}
+                            <td class="px-4 py-3">
+                                {{ value|default:"-" }}
+                            </td>
+                        {% endif %}
                     {% endfor %}
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{{ results.1|length }}" class="text-center py-5">
+                    <td colspan="{{ results.1|length|add:'-1' }}" class="text-center py-5">
                         <div class="text-muted">
                             <i class="bi bi-search d-block fs-2 mb-2"></i>
                             No se encontraron registros con los filtros seleccionados.

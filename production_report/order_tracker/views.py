@@ -36,8 +36,8 @@ def order_tracker_view(request):
                 order_progress = tethers_status(order_details, process_results)
 
 
-    print("Los resultados de los tethers:", order_progress)
-    print("Process results:", process_results)
+    print("Process results:", test2_results)
+    print("Headers", test2_results)
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,

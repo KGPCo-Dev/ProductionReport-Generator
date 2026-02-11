@@ -14,6 +14,7 @@ ORDER by results.fail_amount DESC
 
 FINAL_TEST_REPORT_QUERY = """
 SELECT
+  (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha de Produccion",
   results.build_id AS "Orden",
   results.employee_number AS "Empleado",
   results.workplace AS "Mesa",
@@ -23,12 +24,12 @@ SELECT
   orders.fiber_count AS "Fibras totales",
   results.passed_fibers AS "Fibras aprobadas",
   CASE
+    WHEN results.failed_fibers = '' THEN  '0'
+  END AS "Fibras fallidas",
+  CASE
     WHEN results.finished IS true THEN 'Terminado'
     ELSE 'No terminado'
-  END AS "Estatus",
-  CASE
-    WHEN results.failed_fibers = '' THEN  '0'
-  END AS "Fibras fallidas"
+  END AS "Estatus"
 FROM public.kgp_finaltest_results results
 JOIN public.kgp_production_orders orders
   ON results.build_id = orders.build_id
@@ -75,6 +76,7 @@ WHERE build_id = %s
 
 ORDER_STATUS_QUERY = """
 SELECT
+    id,
     build_id as "Orden",
     entered_date::DATE AS "Fecha",
     TO_CHAR(entered_date::TIME, 'HH24:MI') AS "Hora",
@@ -124,6 +126,7 @@ ORDER BY results.entered_date
 
 PRODUCTION_REPORT_QUERY = """
 SELECT
+    (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha de Produccion",
     results.entered_date::DATE AS "Fecha de Registro",
     TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
     CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
@@ -135,7 +138,6 @@ SELECT
         WHEN 5 THEN 'Viernes'
         WHEN 6 THEN 'Sábado'
     END AS "Dia",
-    (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha de Produccion",
     results.build_id AS "Orden",
     orders.cable_type AS "Tipo de Cable",
     results.employee_number AS "Empleado",
@@ -194,7 +196,7 @@ REPORT_CONFIG = {
         'filename': 'Reporte Final Test',
         'sheet_name': 'Final Test',
         'chart_config': { 
-            'date_col': 'Fecha de Registro',
+            'date_col': 'Fecha de Produccion',
             'label': 'Fibras'
         }
     },
