@@ -1,4 +1,10 @@
-<div id="loading-spinner" class="text-center my-5">
+<!-- This loader_script waits for page processes to be completed in order to execute fade out 
+ In order to make it work is needed to register an event id.
+ var $chart = $('#productionChart'); for classes
+
+-->
+
+<div id="loading-spinner" class="text-center my-s">
     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
         <span class="mt-2 text-muted fw-bold"></span>
     </div>
@@ -6,110 +12,96 @@
 </div>
 
 <script>
-    $(document).ready(function () { 
-        // Desactivar alertas molestas de DataTables (solo log en consola si hay error)
-        $.fn.dataTable.ext.errMode = 'none';
+    window.PageLoader = { 
+        tasks: new Set(),
 
-        // Identificar tablas en el DOM
-        var $processTable = $('#processTable');
-        var $dynamicTable = $('#dynamicTable'); // Tabla de test2 o resultados generales
-        var $chart = $('#productionChart');
-
-        // Estado inicial (si no existe la tabla, se considera lista "ready=true")
-        var processReady = $processTable.length === 0;
-        var dynamicReady = $dynamicTable.length === 0;
-        var chartReady = $chart.length === 0;
-
-        function checkAllReady() { 
-            // console.log("Status -> Process:", processReady, "Dynamic:", dynamicReady, "Chart:", chartReady);
-            
-            if (processReady && dynamicReady && chartReady) {
-                // console.log("Todo listo. Mostrando UI.");
-                $('#loading-spinner').fadeOut(200, function() { 
-                    // Mostrar todos los contenedores de tablas marcados con la clase común
-                    $('.js-table-container').fadeIn(400);
-                    $('#dashboard-container').fadeIn(400);
-                });
-            }
-        }
-
-        // Listener para gráficas (si existen)
-        document.addEventListener('chartReady', function() { 
-            chartReady = true;
-            checkAllReady();
-        });
-
-        // Configuración de idioma en español (objeto local para evitar CORS)
-        var spanishLanguage = {
+        dataTableSpanish: { 
             "processing": "Procesando...",
             "lengthMenu": "Mostrar _MENU_ registros",
-            "zeroRecords": "No se encontraron resultados",
-            "emptyTable": "Ningún dato disponible en esta tabla",
-            "info": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            "infoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-            "infoFiltered": "(filtrado de un total de _MAX_ registros)",
-            "search": "Buscar:",
-            "infoThousands": ",",
+            "ZeroRecords": "No se encontraron resultados",
+            "EmptyTable": "No hay datos para esta table",
+            "info": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ regristros",
+            "infoEmpty": "Mostrando registros del 0 al 0 con un total de 0 registros",
+            "infoFiltered": "( filtrado de un total de _TOTAL_ registros )",
+            "search": "Buscar",
             "loadingRecords": "Cargando...",
-            "paginate": {
+            "paginate": { 
                 "first": "Primero",
-                "last": "Último",
+                "last": "Ultimo",
                 "next": "Siguiente",
                 "previous": "Anterior"
-            },
-            "aria": {
-                "sortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sortDescending": ": Activar para ordenar la columna de manera descendente"
+             }
+         },
+
+        register: function(taskId) { 
+            this.tasks.add(taskId);
+            console.log(`[PageLoader] Tarea registrada: ${taskId}. Pendientes: ${this.tasks.size}`);
+            $('#loading-spinner').show();
+            $('.js-table-container').hide();
+            $('#dashboard-container').hide();
+          },
+
+        finish: function(taskId) { 
+            if (this.tasks.has(taskId)) { 
+                this.tasks.delete(taskId);
+                this.check();
+             }
+           },
+
+        check: function() { 
+            if (this.tasks.size === 0) { 
+                console.log("[PageLoader] Todas las tareas completadas. Mostrando UI.");
+                $('#loading-spinner').fadeOut(200, function() { 
+                    $('.js-table-container').fadeIn(400);
+                    $('#dashboard-container').fadeIn(400);
+                 });
             }
-        };
+    };
 
-        // 1. Inicializar Process Table (Test Results / Yield)
-        // Nota: Desactivamos 'ordering' porque las filas colapsables (acordeón) rompen la indexación de DataTables
+     // DataTable configuration //
+
+    $(document).ready(function() { 
+        $.fn.dataTable.ext.errMode = 'none';
+
+        var $processTable = $('#processTable');
+        var $dynamicTable = $('#dynamicTable');
+        var $chart = $('#productionChart');
+
+        if ($processTable.length) PageLoader.register('processTable');
+        if ($dynamicTable.length) PageLoader.register('dynamicTable');
+        if ($chart.length)        PageLoader.register('productionChart');
+
         if ($processTable.length) { 
-            $('#loading-spinner').show();
-            console.log("Inicializando Process Table...");
-            $processTable.DataTable ({ 
+            $processTable.DataTable({ 
                 "pageLength": 10,
-                "ordering": false, // CRÍTICO: Evita el error _DT_CellIndex con filas colapsables
-                "language": spanishLanguage,
-                "initComplete": function(settings, json) { 
-                    processReady = true;
-                    checkAllReady();
-                }
-            });
-        }
+                "ordering": false,
+                "language": PageLoader.dataTableSpanish,
+                "initComplete": function() { PageLoader.finish('processTable'); }
+             });
+         }
 
-        // 2. Inicializar Dynamic Table (Test2 u otros reportes)
         if ($dynamicTable.length) { 
-            $('#loading-spinner').show();
-            console.log("Inicializando Dynamic Table...");
-            $dynamicTable.DataTable ({ 
+            $dynamicTable.DataTable({ 
                 "pageLength": 10,
-                "language": spanishLanguage,
-                "initComplete": function(settings, json) { 
-                    dynamicReady = true;
-                    checkAllReady();
-                }
-            });
-        }
+                "language": PageLoader.dataTableSpanish,
+                "initComplete": function() { PageLoader.finish('dynamicTable'); }
+             });
+         }
+        
+        if ($chart.length) { 
+            document.addEventListener('chartReady', function() { 
+                PageLoader.finish('productionChart');
+             });
+         }
 
-        // Si no hay nada que cargar, ocultar spinner inmediatamente
-        if (processReady && dynamicReady && chartReady) {
-            $('#loading-spinner').hide();
-        }
+        PageLoader.check();
 
-        // Resetear al enviar formulario
-        $('form').on('submit', function () { 
+        $('form').on('submit', function() { 
             if ($(this).attr('method').toLowerCase() === 'get') { 
                 $('.js-table-container').hide();
                 $('#dashboard-container').hide();
                 $('#loading-spinner').show();
-
-                processReady = false;
-                dynamicReady = false;
-                chartReady = false;
-            }
-        });
-
-     });
+                }
+            });
+    });
 </script>

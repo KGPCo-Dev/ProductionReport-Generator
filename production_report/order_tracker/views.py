@@ -36,9 +36,6 @@ def order_tracker_view(request):
                 order_progress = tethers_status(order_details, process_results)
 
 
-    print("Process results:", test2_results)
-    print("Headers", test2_results)
-
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,
         'process_results': process_results,
@@ -163,15 +160,20 @@ def tethers_status(order_details, process_results):
             lastest = max(tethers_scans, key=lambda x: x.get('Fecha'))
             last_process = lastest.get('process_id', 0)
 
+            print("Last Process value:", last_process)
+
             percentage = (last_process / 8) * 100
             if percentage > 100: percentage = 100
+
+            if last_process == 9:
+                percentage = (1 / 8) * 100
 
             tethers_data.update({
                 'percentage': int(percentage),
                 'current_process': lastest.get('Proceso', 'Sin registrar'),
                 'workplace': lastest.get('Estacion', '-'),
                 'location': lastest.get('Locacion', 'Sin montar'),
-                'is_complete': last_process >= 8
+                'is_complete': last_process >= 8 and last_process != 9
              })
         tethers_status.append(tethers_data)    
 

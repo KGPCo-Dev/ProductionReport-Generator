@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+
+{% block extra_js %}
+    {% include "includes/table_loader_script.html" %}
+{% endblock %}
+
 {% block title %}Inicio - KGPCo{% endblock %}
 
 {% block content %}
@@ -82,9 +87,4 @@
     {% if chart_data %}
         {% include "includes/dynamic_dashboard.html" %}
     {% endif %}
-{% endblock %}
-
-
-{% block table_js %}
-    {% include "includes/table_loader_script.html" %}
 {% endblock %}

@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Inicio - KGPCo{% endblock %}
+
+{% block extra_js %}
+  {% include "includes/table_loader_script.html" %}
+{% endblock %}
+
 {% block content %}
 
   <div class="hero-card">
@@ -29,29 +34,36 @@
         <h1 class="h3 mb-0 fw-bold"><span>Estatus de Tethers</span></h1>
         <p class="text-muted small">Visualizacion de Avance</p>
       <div class="card mb-4 shadow border-0">
-
         <div class="card-body px-4 pb-4">
           <div class="d-flex flex-wrap justify-content-center gap-4">
-            {% for tether in order_progress %}
-              <div class="tether-card text-center" data-bs-toggle="tooltip" data-bs-html="true" title="<b>Tether #{{ tether.number }}</b><br>Último Proceso: {{ tether.current_process }}<br>Estacion: {{ tether.workplace }}">
-                          <div class="mb-1">
-                            <span class="badge-location">
-                              Locacion <br>
-                              {{ tether.location }}
-                            </span>
-                          </div>
 
-                          <div class="progress-capsule">
-                            <div class="progress-fill {% if not tether.is_complete %}incomplete{% endif %}" style="height: {{ tether.percentage }}%;"></div>
-                          </div>
-                          <div class="tether-number">
-                            {% if tether.is_complete %}
-                              <i class="bi bi-check-circle-fill text-success"></i>
-                            {% else %}
-                              <span>Tether {{ tether.number }}</span>
-                            {% endif %}
-                          </div>
-              </div>
+            <!-- If tethers are detected progeress bar is displayed -->
+            {% for tether in order_progress %}
+            <div class="tether-container text-center"
+                 data-bs-toggle="tooltip" 
+                 data-bs-html="true" 
+                 title="<b>Tether #{{ tether.number }}</b><br>Ultimo Proceso: {{ tether.current_process }}<br>Estacion: {{ tether.workplace }}">
+
+                <div class="location-wrapper">
+                  <span class="badge-location">
+                    LOC {{ tether.location }}
+                  </span>
+                </div>
+
+                <div class="progress-capsule"> 
+                  <div class="progress-fill {% if not tether.is_complete %}incomplete{% endif %}"
+                        style="height: {{ tether.percentage }}%;">
+                  </div>
+                </div>
+
+                <div class="status-wrapper mt-2">
+                  {% if tether.is_complete %}
+                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  {% else %}
+                    <span class="tether-label">T-{{ tether.number }}</span>
+                  {% endif %}
+                </div>
+            </div>
             {% endfor %}
           </div>
         </div>
@@ -59,6 +71,7 @@
 
       <script>
         document.addEventListener("DOMContentLoaded", function(){ 
+          
           var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
           var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl){ 
             return new bootstrap.Tooltip(tooltipTriggerEl);
