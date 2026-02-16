@@ -71,21 +71,31 @@
         if ($dynamicTable.length) PageLoader.register('dynamicTable');
         if ($chart.length)        PageLoader.register('productionChart');
 
-        if ($processTable.length) { 
-            $processTable.DataTable({ 
+        if ($processTable.length) {
+            try {
+                $processTable.DataTable({ 
                 "pageLength": 10,
                 "ordering": false,
                 "language": PageLoader.dataTableSpanish,
                 "initComplete": function() { PageLoader.finish('processTable'); }
-             });
+                });
+            } catch (error) {  
+                console.error("Error en processTable", error);
+                PageLoader.finish('processTable')
+            }
          }
 
-        if ($dynamicTable.length) { 
-            $dynamicTable.DataTable({ 
-                "pageLength": 10,
-                "language": PageLoader.dataTableSpanish,
-                "initComplete": function() { PageLoader.finish('dynamicTable'); }
-             });
+        if ($dynamicTable.length) {
+            try { 
+                console.log(`[PageLoader] dynamicTableExists`);
+                $dynamicTable.DataTable({ 
+                    "pageLength": 10,
+                    "language": PageLoader.dataTableSpanish,
+                    "initComplete": function() { PageLoader.finish('dynamicTable'); }
+                });
+             } catch (error) { 
+                console.error("Error en dynamicTable", error);
+              }
          }
         
         if ($chart.length) { 
