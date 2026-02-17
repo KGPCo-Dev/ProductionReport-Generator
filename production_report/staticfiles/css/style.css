@@ -1,0 +1,360 @@
+:root {
+   --kgp-blue: #0056b3;
+   --kgp-blue-dark: #003d80;
+   --kgp-blue-accent: #007bff;
+
+   --kgp-light: #f8f9fa;
+   --text-primary: #333;
+}
+
+body {
+   font-family: 'Inter', sans-serif;
+   background-color: var(--kgp-light);
+   color: var(--text-primary);
+}
+
+/*NavBar Customization */
+.navbar-custom {
+   background-color: var(--kgp-blue);
+}
+
+/* Utility Classes */
+#loading-spinner {
+   display: none;
+}
+
+/*  Hide empty-table container to prevent layout shifts */
+
+#table-container:empty {
+   display: none !important;
+}
+
+/* Table Styling */
+.table-custom {
+   border-collapse: separate;
+   border-spacing: 0;
+   overflow: hidden;
+   border-radius: 8px;
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.table-custom thead th {
+   background: linear-gradient(180deg, var(--kgp-blue-accent) 0%, var(--kgp-blue) 100%);
+   color: white;
+}
+
+.table-custom th {
+   font-weight: 700;
+   text-transform: uppercase;
+   vertical-align: middle;
+   letter-spacing: 0.05rem;
+   font-size: 0.8rem;
+   padding: 12px;
+   border-bottom: 2px solid var(--kgp-blue-dark);
+   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.table-custom th:first-child {
+   border-bottom-left-radius: 8px;
+}
+
+.table-custom th:last-child {
+   border-bottom-right-radius: 8px;
+}
+
+.table-custom td {
+   vertical-align: middle;
+   padding: 10px;
+}
+
+.table-custom tbody tr:hover {
+   background-color: rgba(0, 86, 179, 0.05);
+}
+
+/* Search Bar Style */
+.search-container {
+   max-width: 600px;
+   margin: 2rem auto;
+   text-align: center;
+}
+
+.search-container h1 {
+   margin-bottom: 2rem;
+   font-weight: 700;
+   color: var(--kgp-blue);
+}
+
+/* Custom Search Bar Input */
+#order-search-bar {
+   display: flex;
+   align-items: center;
+   border: 2px solid var(--kgp-blue);
+   border-radius: 45px;
+   overflow: hidden;
+   background-color: var(--kgp-blue);
+   transition: box-shadow 0.3s ease;
+   max-width: 600px;
+   margin: 2rem auto;
+}
+
+#order-search-bar:focus-within {
+   box-shadow: 0 0 0 4px rgba(61, 119, 180, 0.2);
+   border-color: var(--kgp-blue);
+}
+
+#order-search-bar input {
+   flex: 1;
+   height: 50px;
+   border: none;
+   outline: none;
+   padding-left: 25px;
+   font-size: 1rem;
+   color: #333;
+}
+
+#order-search-bar input:focus {
+   box-shadow: 0 0 0 3px rgba(61, 119, 180, 0.2);
+   border-color: var(--kgp-blue);
+}
+
+#order-search-bar button {
+   height: 50px;
+   width: 60px;
+   background-color: var(--kgp-blue);
+   border: none;
+   color: white;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 1px;
+   cursor: pointer;
+   transition: background-color 0.3s;
+}
+
+#order-search-bar button:hover {
+   background-color: var(--kgp-blue-dark);
+}
+
+/* Card Design */
+.hero-card {
+   background-color: white;
+   padding: 3rem;
+   border-radius: 16px;
+   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+   max-width: auto;
+   margin: 3rem auto;
+   text-align: center;
+}
+
+.hero-title {
+   color: var(--kgp-blue-dark);
+   font-weight: 700;
+   margin-bottom: 0.5rem;
+   letter-spacing: -0.5px;
+}
+
+
+.hero-subtitle {
+   color: #6c757d;
+   margin-bottom: 2rem;
+   font-size: 1.1rem;
+}
+
+/* Order Details Display */
+.dashboard-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+   gap: 1.25rem;
+}
+
+@media (min-width: 576px) {
+   .dashboard-grid {
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+   }
+}
+
+.kpi-card {
+   background: #ffffff;
+   border: 1px solid #e9ecef;
+   border-radius: 16px;
+   padding: 1.25rem;
+   display: flex;
+   align-items: center;
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kpi-card:hover {
+   transform: translateY(-5px);
+   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+   border-color: var(--kgp-blue);
+}
+
+.kpi-icon {
+   width: 48px;
+   height: 48px;
+   background-color: rgba(0, 86, 179, 0.08);
+   color: var(--kgp-blue);
+   border-radius: 14px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.5rem;
+   margin-right: 1rem;
+}
+
+.kpi-content {
+   display: flex;
+   flex-direction: column;
+}
+
+.kpi-label {
+   font-size: 0.75rem;
+   font-weight: 600;
+   color: #6c757d;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+}
+
+.kpi-data {
+   font-size: 1.15rem;
+   font-weight: 700;
+   color: #212529;
+}
+
+.accent-line {
+   width: 6px;
+   height: 32px;
+   background-color: var(--kgp-blue);
+   border-radius: 10px;
+}
+
+.kpi-card.highlight {
+   background-color: #f8faff;
+   border-left: 4px solid var(--kgp-blue);
+}
+
+.kpi-wide {
+   grid-column: span 2;
+}
+
+@media (max-width: 600px) {
+   .kpi-wide {
+      grid-column: span 1
+   }
+}
+
+.kpi-group-vertical {
+   background: #ffffff;
+   border: 1px solid #e9ecef;
+   border-radius: 16px;
+   padding: 1.25rem;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kpi-group-vertical:hover {
+   transform: translateY(-5px);
+   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-card-mini {
+   display: flex;
+   flex-direction: column;
+}
+
+.border-top {
+   border-top: 1px solid #f1f3f5;
+}
+
+.items-container {
+   display: flex;
+   padding: 1rem;
+}
+
+.custom-icon-img {
+   width: 30px;
+   height: 30px;
+   background-color: var(--kgp-blue);
+   mask-size: contain;
+   -webkit-mask-repeat: no-repeat;
+   mask-repeat: no-repeat;
+   -webkit-mask-position: center;
+   mask-position: center;
+   display: inline-block;
+}
+
+/* Process Table Fail Rows Design */
+.table-custom tbody tr.bg-orange-subtle>td {
+   background-color: rgba(248, 156, 119, 0.13) !important;
+}
+
+.btn-toggle-icon {
+   transition: transform 0.3s ease;
+   display: inline-block;
+}
+
+.btn[aria-expanded="true"] .btn-toggle-icon {
+   transform: rotate(90deg);
+}
+
+/* Tether progress containers */
+.tether-container { 
+   display: inline-flex;
+   flex-direction: column;
+   align-items: center;
+   width: auto;
+   padding: 10px;
+   transition: transform 0.2s ease;
+ }
+
+.tether-container:hover { 
+   transform: translateY(-5px);
+ }
+
+.badge-location {
+   font-size: 0.7rem;
+   font-weight: bold;
+   background-color: #495057;
+   color: white;
+   padding: 3px 10px;
+   border-radius: 20px;
+   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+   margin-bottom: -5px;
+   z-index: 2;
+   position: relative;
+}
+
+.progress-capsule {
+   background-color: #f0f0f0;
+   border-radius: 50px;
+   height: 150px;
+   width: 22px;
+   margin: 0 auto;
+   position: relative;
+   overflow: hidden;
+   border: 2px solid #fff;
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+   z-index: 1;
+}
+
+.progress-fill {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   background: linear-gradient(to bottom, #198754, #20c997);
+   border-radius: 50px;
+   transition: height 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.progress-fill.incomplete {
+   background: linear-gradient(to bottom, var(--kgp-blue), #0dcaf0);
+}
+
+.tether-label { 
+   font-size: 0.75rem;
+   font-weight: 600;
+   color: #6c757d;
+ }

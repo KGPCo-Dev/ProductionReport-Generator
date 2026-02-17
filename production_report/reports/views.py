@@ -42,7 +42,7 @@ def production_report_view(request):
                 
                 results = dicfetchall(cursor)
 
-                if results:
+                if cursor.description:
                     headers = [col[0] for col in cursor.description]
             
             #We create the structure to render de Dashboard
@@ -71,7 +71,10 @@ def production_report_view(request):
             if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
 
-            production_results = [results, headers]
+            if headers:
+                production_results = [results, headers]
+            
+            print("results on views:", production_results)
 
     return render(request, 'reports/report_preview.html', { 
         'results': results,

@@ -61,6 +61,8 @@
      // DataTable configuration //
 
     $(document).ready(function() { 
+
+        // Once all objects are ready on DOM we create the var for loading // 
         $.fn.dataTable.ext.errMode = 'none';
 
         var $processTable = $('#processTable');
@@ -86,16 +88,26 @@
          }
 
         if ($dynamicTable.length) {
-            try { 
-                console.log(`[PageLoader] dynamicTableExists`);
-                $dynamicTable.DataTable({ 
-                    "pageLength": 10,
-                    "language": PageLoader.dataTableSpanish,
-                    "initComplete": function() { PageLoader.finish('dynamicTable'); }
-                });
-             } catch (error) { 
-                console.error("Error en dynamicTable", error);
-              }
+    
+            var $firstRowCell = $dynamicTable.find('tbody tr:first td');
+            var isTableEmpty = $firstRowCell.attr('colspan') !== undefined;
+
+            if (isTableEmpty) {
+                console.log("[PageLoader] Tabla vacía detectada. Saltando inicialización.");
+                PageLoader.finish('dynamicTable');
+            } else {
+                try { 
+                    console.log(`[PageLoader] dynamicTableExists`);
+                    $dynamicTable.DataTable({ 
+                        "pageLength": 10,
+                        "language": PageLoader.dataTableSpanish,
+                        "initComplete": function() { PageLoader.finish('dynamicTable'); }
+                    });
+                } catch (error) { 
+                    console.error("Error en dynamicTable", error);
+                    PageLoader.finish('dynamicTable');
+                }
+            }
          }
         
         if ($chart.length) { 
@@ -107,11 +119,15 @@
         PageLoader.check();
 
         $('form').on('submit', function() { 
+            if (document.activeElement && document.activeElement.name === 'export') {
+                return; 
+            }
+
             if ($(this).attr('method').toLowerCase() === 'get') { 
-                $('.js-table-container').hide();
+                $('#js-table-container').hide();
                 $('#dashboard-container').hide();
                 $('#loading-spinner').show();
-                }
-            });
+            }
+        });
     });
 </script>
