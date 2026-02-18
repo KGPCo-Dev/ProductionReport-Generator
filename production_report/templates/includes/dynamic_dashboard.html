@@ -1,5 +1,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script>
+{% comment %}
+        color_picker = '#29b457cb'
+        gradient_picker_one = rgba(41, 187, 41, 0.8)
+        gradient_picker_two = rgba(13, 253, 53, 0.3)
+{% endcomment %}
+
     document.addEventListener('DOMContentLoaded', function() { 
 
         const canvas = document.getElementById('productionChart');
@@ -12,9 +19,10 @@
         const ctx = document.getElementById('productionChart').getContext('2d');
         const data = {{ chart_data|safe }};
         var gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(13, 110, 253, 0.8)');
-        gradient.addColorStop(1, 'rgba(13, 110, 253, 0.3)');
+        gradient.addColorStop(0, data.lighter_color);
+        gradient.addColorStop(1, data.darker_color);
 
+        Chart.register(ChartDataLabels);
 
         new Chart(ctx, { 
             type: 'bar',
@@ -23,7 +31,7 @@
                 datasets: [{ 
                     label:data.label,
                     data:data.data,
-                    borderColor: '#0d6efd',
+                    borderColor: data.base_color,
                     backgroundColor: gradient,
                     borderRadius: 8,
                     borderWidth: 0,
@@ -40,9 +48,26 @@
                         document.dispatchEvent(new Event('chartReady'));
                     }
                  },
+                plugins: { 
+                    legend: { display: true },
+                    datalabels: { 
+                        anchor: 'end',
+                        align: 'top',
+                        offset: '4',
+                        color: '#444',
+                        font: { 
+                            weight: 'bold',
+                            size: '12'
+                         },
+                        formatter: function(value){ 
+                            return value
+                         }
+                     }
+                 },
                 scales: { 
                     y: { 
                         beginAtZero: true,
+                        grace: '15%',
                         grid: { 
                             color: '#f0f0f0',
                             borderDash: [5, 5]

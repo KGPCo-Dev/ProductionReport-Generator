@@ -28,8 +28,10 @@ def production_report_view(request):
 
     if request.method == 'GET':
         if start_date and end_date:
+            is_short_range = False
             params = [start_date, end_date]
             shift_clause = ""
+
             if shift in ['1', '2']:
                 shift_clause = "AND results.production_shift = %s"
                 params.append(int(shift))
@@ -48,33 +50,70 @@ def production_report_view(request):
             #We create the structure to render de Dashboard
             results_df = pd.DataFrame(results, columns=headers)
             
+            #We define if start and end date is bigger than one day to decide wich templete to use
+            try:
+                start_dt = pd.to_datetime(start_date)
+                end_dt = pd.to_datetime(end_date)
+
+                if start_dt.date() == end_dt.date():
+                    is_short_range = True
+                else:
+                    is_short_range = False
+
+            except Exception as e:
+                pass
+
             if not results_df.empty:
                 chart_conf = config.get('chart_config')
+
                 if chart_conf:
                     date_col = chart_conf['date_col']
+                    hour_col = chart_conf['hour_col']
                     
-                    if date_col in results_df.columns:
+                    if is_short_range and hour_col and hour_col in results_df.columns:
+                        group_col = hour_col
+
+                        graph_df = results_df.groupby(group_col).size().reset_index(name='Amount')
+                        graph_df = graph_df.sort_values(by=group_col)
+
+                        chart_labels = graph_df[group_col].to_list()
+
+                    else:
                         results_df[date_col] = pd.to_datetime(results_df[date_col])
 
                         #We create a DF based on the results, grouped by Date#
                         graph_df = results_df.groupby(date_col).size().reset_index(name='Amount')
         
                         chart_labels = [date_format(date, "Y-F-d") for date in graph_df[date_col]]
-                        chart_values = graph_df['Amount'].tolist()
+                    
+                    chart_values = graph_df['Amount'].tolist()
         
-                        chart_data = { 
-                            'labels': chart_labels,
-                            'data': chart_values,
-                            'label': chart_conf['label']
-                        }
+                    chart_data = { 
+                        'labels': chart_labels,
+                        'data': chart_values,
+                        'label': chart_conf['label'],
+                        'base_color': chart_conf['base_color'],
+                        'lighter_color': chart_conf['lighter_color'],
+                        'darker_color': chart_conf['darker_color']
+                    }
+                        
 
             if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
 
+            hour_col_name = config.get('chart_config', {}).get('hour_col')
+
+            if hour_col_name and headers and results:
+                if hour_col_name in headers:
+                    headers.remove(hour_col_name)
+                
+                for row in results:
+                    if hour_col_name in row:
+                        del row[hour_col_name]
+
             if headers:
                 production_results = [results, headers]
-            
-            print("results on views:", production_results)
+        
 
     return render(request, 'reports/report_preview.html', { 
         'results': results,

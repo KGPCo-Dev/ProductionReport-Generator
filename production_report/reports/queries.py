@@ -20,7 +20,8 @@ SELECT
   results.workplace AS "Mesa",
   results.production_shift AS "Turno",
   results.entered_date::date AS "Fecha de Registro",
-  TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
+  results.production_hour AS "Hora",
+  TO_CHAR(results.entered_date, 'HH24:MI') AS "Tiempo de Registro",
   orders.fiber_count AS "Fibras totales",
   results.passed_fibers AS "Fibras aprobadas",
   CASE
@@ -114,6 +115,7 @@ SELECT
     results.employee_number AS "Empleado",
     results.workplace AS "Estacion",
     results.production_cell AS "Celda",
+    results.production_hour AS "Hora",
     results.production_shift AS "Turno"
 FROM public.kgp_test2_results results
 JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
@@ -140,6 +142,7 @@ SELECT
     END AS "Dia",
     results.build_id AS "Orden",
     orders.cable_type AS "Tipo de Cable",
+    results.production_hour AS "Hora",
     results.employee_number AS "Empleado",
     results.workplace AS "Estacion",
     results.production_cell AS "Celda",
@@ -161,8 +164,25 @@ REPORT_CONFIG = {
         'sheet_name': 'Scrap',
         'chart_config': { 
             'date_col': 'Fecha del Scrap',
-            'label': 'Tethers Scrap'
+            'hour_col': 'Hora',
+            'label': 'Ordenes Scrap',
+            'base_color': '#da1d1df1',
+            'lighter_color': 'rgba(223, 59, 59, 0.99)',
+            'darker_color': 'rgba(253, 13, 13, 0.3)'
          }
+    },
+    'final_test_report': { 
+        'query': FINAL_TEST_REPORT_QUERY,
+        'filename': 'Reporte Final Test',
+        'sheet_name': 'Final Test',
+        'chart_config': { 
+            'date_col': 'Fecha de Produccion',
+            'hour_col': 'Hora',
+            'label': 'Fibras',
+            'base_color': '#29b457cb',
+            'lighter_color': 'rgba(41, 187, 41, 0.8)',
+            'darker_color': 'rgba(13, 253, 53, 0.3)'
+        }
     },
     'production_report': { 
         'query': PRODUCTION_REPORT_QUERY,
@@ -170,7 +190,11 @@ REPORT_CONFIG = {
         'sheet_name': 'Produccion',
         'chart_config': { 
             'date_col': 'Fecha de Produccion',
-            'label': 'Tethers Producidos'
+            'hour_col': 'Hora',
+            'label': 'Tethers Producidos',
+            'base_color': '#0d6efd',
+            'lighter_color': 'rgba(13, 110, 253, 0.8)',
+            'darker_color': 'rgba(13, 110, 253, 0.3)'
          }
     },
     'order_status_results': { 
@@ -190,15 +214,6 @@ REPORT_CONFIG = {
             'date_col': 'Fecha de Registro',
             'label': 'Resultados'
          }
-    },
-    'final_test_report': { 
-        'query': FINAL_TEST_REPORT_QUERY,
-        'filename': 'Reporte Final Test',
-        'sheet_name': 'Final Test',
-        'chart_config': { 
-            'date_col': 'Fecha de Produccion',
-            'label': 'Fibras'
-        }
     },
     'order_fail_results': { 
         'query': ORDER_FAIL_RESULTS_QUERY,
