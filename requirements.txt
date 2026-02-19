@@ -6,6 +6,7 @@ psycopg2-binary
 dj-database-url
 python-dotenv
 supabase
+djangorestframework
 
 # Data Processing & Excel
 pandas
