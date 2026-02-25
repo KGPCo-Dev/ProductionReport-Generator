@@ -12,6 +12,7 @@ WHERE result_status IS DISTINCT FROM 'Rework'
 """
 PRODUCTION_RESULTS_QUERY = """
 SELECT
+  results.entered_date::DATE,
   results.employee_number,
   results.build_id,
   results.workplace,
@@ -21,7 +22,9 @@ SELECT
   results.hold_time_total,
   results.active_time_total,
   results.time_total,
-  process.process_name
+  process.process_name,
+  results.process_start_time,
+  results.process_finish_time
 FROM public.kpg_production_process_results results
 JOIN public.kgp_production_process process ON results.process_id = process.process_id
 """
@@ -86,10 +89,10 @@ FROM public.kgp_production_orders
 """
 
 REPORT_CONFIG = { 
-    'test2_results': { 
+    'molded_tethers_results': { 
         'query': TEST2_RESULTS_QUERY
     },
-    'production_results': { 
+    'yield_system_results': { 
         'query': PRODUCTION_RESULTS_QUERY
     },
     'scrap_results': { 
@@ -101,7 +104,7 @@ REPORT_CONFIG = {
     'production_process': { 
         'query': PRODUCTION_PROCESS_QUERY
      },
-    'scrap_codes': { 
+    'quality_auditors': { 
         'query': SCRAP_CODES_QUERY
      },
     'quality_auditors': { 

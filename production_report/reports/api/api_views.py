@@ -33,3 +33,20 @@ class AllDataAPI(APIView):
             
             results[table_name] = consult
         return Response(results)
+
+class TableAPI(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, table_name):
+
+        config = REPORT_CONFIG.get(table_name)
+        if not config:
+            return Response({'error': f'Tabla "{table_name}" no existe.'}, status=404)
+        
+        query = config['query']
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            results = dicfetchall(cursor)
+        
+        return Response(results)
