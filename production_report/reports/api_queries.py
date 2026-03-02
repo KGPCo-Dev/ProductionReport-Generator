@@ -24,7 +24,8 @@ SELECT
   results.time_total,
   process.process_name,
   results.process_start_time,
-  results.process_finish_time
+  results.process_finish_time,
+  results.shift
 FROM public.kpg_production_process_results results
 JOIN public.kgp_production_process process ON results.process_id = process.process_id
 """
@@ -39,6 +40,8 @@ SELECT
   results.scrap_auditor,
   results.tap_number,
   results.global_tether,
+  results.shift,
+  results.workplace,
   (results.entered_date - INTERVAL '7 hours')::DATE AS date
 FROM public.kgp_production_scrap results
 JOIN public.kgp_production_process process ON results.process_id = process.process_id
@@ -55,7 +58,8 @@ SELECT
   results.employee_number,
   process.process_name,
   fails.fail_description,
-  results.fail_amount
+  results.fail_amount,
+  results.shift
 FROM public.kpg_process_fails results
 JOIN public.kgp_process_fail_codes fails ON results.fail_id = fails.fail_id
 JOIN public.kgp_production_process process ON results.process_id = process.process_id
@@ -71,7 +75,11 @@ FROM public.kgp_scrap_codes
 """
 
 QUALITY_AUDITORS_QUERY = """
-SELECT *
+SELECT
+  employee_number AS "auditor_number",
+  employee_name,
+  shift,
+  supervisor
 FROM public.quality_auditors
 """
 
@@ -104,7 +112,7 @@ REPORT_CONFIG = {
     'production_process': { 
         'query': PRODUCTION_PROCESS_QUERY
      },
-    'quality_auditors': { 
+    'scrap_codes': { 
         'query': SCRAP_CODES_QUERY
      },
     'quality_auditors': { 
