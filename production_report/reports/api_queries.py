@@ -70,8 +70,13 @@ FROM public.kgp_production_process
 """
 
 SCRAP_CODES_QUERY = """
-SELECT *
-FROM public.kgp_scrap_codes
+SELECT
+  process.process_name,
+  results.scrap_description,
+  results.scrap_code,
+  results.scrap_description_spanish
+FROM public.kgp_scrap_codes results
+JOIN public.kgp_production_process process ON results.process_id = process.process_id
 """
 
 QUALITY_AUDITORS_QUERY = """
