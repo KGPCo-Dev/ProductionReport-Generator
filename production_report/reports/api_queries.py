@@ -8,6 +8,7 @@ SELECT
   (entered_date - INTERVAL '7 hours')::DATE AS date
 FROM public.kgp_test2_results
 WHERE result_status IS DISTINCT FROM 'Rework'
+  AND result_status IS DISTINCT FROM 'Scrap'
   AND workplace IS NOT NULL
   AND workplace <> ''
 """

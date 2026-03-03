@@ -155,6 +155,7 @@ WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
     AND results.workplace IS NOT NULL
     AND results.workplace <> ''
     AND results.result_status IS DISTINCT  FROM 'Rework'
+    AND results.result_status IS DISTINCT  FROM 'Scrap'
     {shift_clause}
 ORDER BY results.entered_date
 """
