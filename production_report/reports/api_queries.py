@@ -9,6 +9,7 @@ SELECT
 FROM public.kgp_test2_results
 WHERE result_status IS DISTINCT FROM 'Rework'
   AND workplace IS NOT NULL
+  AND workplace <> ''
 """
 PRODUCTION_RESULTS_QUERY = """
 SELECT

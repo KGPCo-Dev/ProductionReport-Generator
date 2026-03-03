@@ -92,6 +92,7 @@ FROM public.kgp_test2_results
 WHERE build_id = %s
     AND result_status IS NOT NULL
     AND workplace IS NOT NULL
+    AND workplace <> ''
 ORDER BY entered_date ASC
 """
 
@@ -152,6 +153,7 @@ JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
 WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
     AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
     AND results.workplace IS NOT NULL
+    AND results.workplace <> ''
     AND results.result_status IS DISTINCT  FROM 'Rework'
     {shift_clause}
 ORDER BY results.entered_date
