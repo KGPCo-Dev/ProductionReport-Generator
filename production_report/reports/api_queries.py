@@ -5,7 +5,8 @@ SELECT
   production_shift,
   production_cell,
   SUBSTRING (workplace FROM 2 FOR 2) AS line,
-  (entered_date - INTERVAL '7 hours')::DATE AS date
+  (entered_date - INTERVAL '7 hours')::DATE AS date,
+  result_status
 FROM public.kgp_test2_results
 WHERE result_status IS DISTINCT FROM 'Rework'
   AND result_status IS DISTINCT FROM 'Scrap'
