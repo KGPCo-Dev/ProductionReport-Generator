@@ -1,21 +1,19 @@
-# Especifica la versión de la sintaxis de Docker Compose.
-version: '3.8'
 
-# Define los servicios (contenedores) que forman parte de la aplicación.
 services:
-  # El servicio de nuestra aplicación web Django.
+
   web:
-    # Construye la imagen de Docker a partir del Dockerfile en el directorio actual (.).
+
     build: .
-    # El comando para iniciar el servidor de desarrollo de Django.
+ 
+    working_dir: /app/production_report
+
     command: python manage.py runserver 0.0.0.0:8000
-    # Mapea el directorio actual del host a /app en el contenedor.
-    # Esto permite que los cambios en el código se reflejen en tiempo real.
+
     volumes:
       - .:/app
-    # Mapea el puerto 8000 del host al puerto 8000 del contenedor.
+
     ports:
-      - "8000:8000"
-    # Carga las variables de entorno desde un archivo .env en la raíz del proyecto.
+      - "9000:8000"
+
     env_file:
-      - .env
+      - ./production_report/.env

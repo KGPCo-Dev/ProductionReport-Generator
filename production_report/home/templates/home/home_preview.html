@@ -2,10 +2,15 @@
 {% block title %}Inicio - KGPCo{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 text-center">
-        <div class="card shadow-sm p-5">
-            <h1 class="mb-4">Selecciona una operacion</h1>
+<div class="row justify-content-center">
+
+    <div id="final_test_kpi">
+        {% include "includes/kpi_card.html" with production_results=production_results %}
+    </div>
+
+    <div class="col-md-6 home-selector mt-4">
+        <div class="metrics-card-mini">
+            <h1 class="hero-title">Selecciona una operacion</h1>
             <div class="d-grid gap-3">
                 <a href="{% url 'report_generator:report_list' %}" class="btn btn-primary btn-lg">Generacion de Reportes</a>
                 

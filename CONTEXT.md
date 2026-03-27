@@ -55,7 +55,7 @@ Success criteria:
 
 ## Current Status
 - `production_report` app has been created.
-- Users can generate **two types of reports**.
+- Users can generate **three types of reports**.
 - Input parameters:
   - `start_date`
   - `end_date`
@@ -64,14 +64,16 @@ Success criteria:
 - The application:
   - Displays a dynamic table
   - Allows downloading results as an Excel file
+  - Allows to track an order and its current status
 - Special consideration:
   - Shifts may span across two calendar days
 
 ---
 
 ## Next Steps
-- Implement Dashboard System.
-- Implement english and spanish lenguage.
+- Implement a chatbot
+- Displays stadistics on home page
+- Implement a pipeline
 ---
 
 ## Answer & Interaction Guidelines

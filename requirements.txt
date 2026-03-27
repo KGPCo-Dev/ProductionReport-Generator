@@ -22,3 +22,13 @@ django-debug-toolbar
 
 # UI Framework
 django-bootstrap5
+
+# IA y RAG
+pgvector
+langchain
+langchain-community
+sentence-transformers
+PyMuPDF
+O365
+msal
+django-allauth

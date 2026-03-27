@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+from django.conf.global_settings import LOGOUT_REDIRECT_URL
+from django.conf.global_settings import MEDIA_ROOT
 import os
 import dj_database_url
 from pathlib import Path
@@ -55,6 +57,13 @@ INSTALLED_APPS = [
     'order_tracker',
     'rest_framework',
     'rest_framework.authtoken',
+    'agent',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.microsoft',
+
 ]
 
 MIDDLEWARE = [
@@ -64,6 +73,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -141,6 +151,7 @@ STATICFILES_DIRS = [
  ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -157,3 +168,28 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
      ],
  }
+
+SITE_ID = 1
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'microsoft': {
+        'APP': {
+            'client_id': os.environ.get('AZURE_LOGIN_CLIENT_ID'),
+            'secret': os.environ.get('AZURE_LOGIN_SECRET_VALUE'),
+            'key': '',
+        },
+        'TENANT': os.environ.get('AZURE_LOGIN_CLIENT_TENANT', 'common'),
+    }
+}
+
+LOGIN_REDIRECT_URL ='/'
+LOGOUT_REDIRECT_URL ='/'

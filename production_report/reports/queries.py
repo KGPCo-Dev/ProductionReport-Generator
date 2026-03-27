@@ -153,6 +153,7 @@ JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
 WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
     AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
     AND results.workplace IS NOT NULL
+    AND results.workplace::integer < 6999
     AND results.workplace <> ''
     AND results.result_status IS DISTINCT  FROM 'Rework'
     AND results.result_status IS DISTINCT  FROM 'Scrap'
