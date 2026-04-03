@@ -2,14 +2,8 @@ from django.shortcuts import render
 from django.db import connection
 from reports.queries import REPORT_CONFIG, ORDER_DETAILS_QUERY, ORDER_FAIL_RESULTS_QUERY
 from reports.models import ProcessNames
+from core.utils.db_utils import dict_fetch_all
 
-
-def dicfetchall(cursor):
-    columns = [col[0] for col in cursor.description]
-    return [ 
-        dict(zip(columns, row))
-        for row in cursor.fetchall()
-     ]
 
 def order_tracker_view(request):
 
@@ -27,13 +21,13 @@ def order_tracker_view(request):
             with connection.cursor() as order_details_cursor:
                 # Order Details Query #
                 order_details_cursor.execute(production_orders_query, [build_id])
-                order_details = dicfetchall(order_details_cursor)
+                order_details = dict_fetch_all(order_details_cursor)
 
             process_results = get_process_results(request, build_id)
             test2_results = get_test2_results(request, build_id)
 
             if order_details and process_results and process_results[0]:
-                order_progress = tethers_status(order_details, process_results)
+                order_progress = get_tethers_status(order_details, process_results)
 
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
@@ -61,7 +55,7 @@ def get_process_results(request, build_id):
 
     with connection.cursor() as fails_results_cursor:
         fails_results_cursor.execute(fails_results_query, [build_id])
-        fails_results = dicfetchall(fails_results_cursor)
+        fails_results = dict_fetch_all(fails_results_cursor)
 
 
         if fails_results:
@@ -70,7 +64,7 @@ def get_process_results(request, build_id):
 
     with connection.cursor() as process_results_cursor:
         process_results_cursor.execute(query, [build_id])
-        results = dicfetchall(process_results_cursor)
+        results = dict_fetch_all(process_results_cursor)
 
         if results:
             headers = [col[0] for col in process_results_cursor.description]
@@ -118,7 +112,7 @@ def get_test2_results(request, build_id):
 
     with connection.cursor() as cursor:
         cursor.execute(query, [build_id])
-        results = dicfetchall(cursor)
+        results = dict_fetch_all(cursor)
 
         if results:
             headers = [col[0] for col in cursor.description]
@@ -127,15 +121,15 @@ def get_test2_results(request, build_id):
 
     return test2_results
 
-def tethers_status(order_details, process_results):
+def get_tethers_status(order_details, process_results):
 
     # In order to get the data for the TetherStatusView we need:
-    #   tethers_status: List  of dict with the current state of oders's tethers
+    #   get_tethers_status: List  of dict with the current state of oders's tethers
     #   total_tethers: oreder's tethers to render the amount of them
     #   results: we get the progress for current order
     #   tethers_data: dict with current status of each tether#
 
-    tethers_status = []
+    get_tethers_status = []
 
     try:
         total_tethers = int(order_details[0].get('tethers', 0))
@@ -175,6 +169,6 @@ def tethers_status(order_details, process_results):
                 'location': lastest.get('Locacion', 'Sin montar'),
                 'is_complete': last_process >= 8 and last_process != 9
              })
-        tethers_status.append(tethers_data)    
+        get_tethers_status.append(tethers_data)    
 
-    return tethers_status
+    return get_tethers_status

@@ -18,6 +18,11 @@
 
         const ctx = document.getElementById('productionChart').getContext('2d');
         const data = {{ chart_data|safe }};
+
+        if (data.labels && data.labels.length > 7) {
+            const newWidth = data.labels.length * 120;
+            document.getElementById('chartGrowBox').style.minWidth = newWidth + 'px';
+        }
         var gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, data.lighter_color);
         gradient.addColorStop(1, data.darker_color);

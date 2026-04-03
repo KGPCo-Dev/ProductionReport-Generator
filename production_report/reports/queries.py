@@ -161,6 +161,79 @@ WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
 ORDER BY results.entered_date
 """
 
+TETHERS_CHART_QUERY = """
+SELECT
+  (entered_date - INTERVAL '7 hours')::DATE AS date_col,
+  COUNT(*) AS Amount
+FROM public.kgp_test2_results results
+WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
+    AND entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
+    AND result_status IS DISTINCT FROM 'Rework'
+    AND workplace IS NOT NULL
+    AND workplace <> ''
+    {shift_clause}
+GROUP BY (entered_date - INTERVAL '7 hours')::DATE
+ORDER BY date_col DESC
+"""
+
+FIBERS_CHART_QUERY = """
+SELECT
+  (entered_date - INTERVAL '7 hours')::DATE AS date_col,
+  COUNT(*) AS Amount
+FROM public.kgp_finaltest_results results
+WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
+    AND entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
+    AND workplace IS NOT NULL
+    AND workplace <> ''
+    {shift_clause}
+GROUP BY (entered_date - INTERVAL '7 hours')::DATE
+ORDER BY date_col DESC
+"""
+
+SCRAP_CHART_QUERY = """
+SELECT
+  (entered_date - INTERVAL '7 hours')::DATE AS date_col,
+  COUNT(*) AS Amount
+FROM public.kgp_test2_results results
+WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
+    AND entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
+    AND result_status = 'Scrap'
+    {shift_clause}
+GROUP BY (entered_date - INTERVAL '7 hours')::DATE
+ORDER BY date_col DESC;
+"""
+
+KPI_CARD_TETHERS_QUERY = """
+SELECT
+  COUNT(*) AS total_amount
+FROM public.kgp_test2_results results
+WHERE entered_date >= (%s::DATE) + INTERVAL '7 hours'
+    AND entered_date < %s
+    AND result_status IS DISTINCT FROM 'Rework'
+    AND workplace IS NOT NULL
+    AND workplace <> ''
+"""
+
+KPI_CARD_FIBERS_QUERY = """
+SELECT
+  COUNT(*) AS total_amount
+FROM public.kgp_finaltest_results results
+WHERE entered_date >= (%s::DATE) + INTERVAL '7 hours'
+    AND entered_date < %s
+    AND workplace IS NOT NULL
+    AND workplace <> ''
+"""
+
+KPI_CARD_SCRAP_QUERY = """
+SELECT
+  COUNT(*) AS total_amount
+FROM public.kgp_test2_results results
+WHERE entered_date >= (%s::DATE) + INTERVAL '7 hours'
+    AND entered_date < %s
+    AND result_status = 'Scrap'
+    AND workplace <> ''
+"""
+
 REPORT_CONFIG = { 
     'scrap_report': { 
         'query': SCRAP_REPORT_QUERY,
@@ -168,6 +241,7 @@ REPORT_CONFIG = {
         'sheet_name': 'Scrap',
         'chart_config': { 
             'date_col': 'Fecha del Scrap',
+            'chart_query':SCRAP_CHART_QUERY,
             'hour_col': 'Hora',
             'label': 'Ordenes Scrap',
             'base_color': '#da1d1df1',
@@ -181,6 +255,7 @@ REPORT_CONFIG = {
         'sheet_name': 'Final Test',
         'chart_config': { 
             'date_col': 'Fecha de Produccion',
+            'chart_query':FIBERS_CHART_QUERY,
             'hour_col': 'Hora',
             'label': 'Fibras',
             'base_color': '#29b457cb',
@@ -194,6 +269,7 @@ REPORT_CONFIG = {
         'sheet_name': 'Produccion',
         'chart_config': { 
             'date_col': 'Fecha de Produccion',
+            'chart_query':TETHERS_CHART_QUERY,
             'hour_col': 'Hora',
             'label': 'Tethers Producidos',
             'base_color': '#0d6efd',

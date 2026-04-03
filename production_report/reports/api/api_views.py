@@ -5,15 +5,7 @@ from rest_framework.authentication import TokenAuthentication
 from django.db import connection
 from ..api_queries import REPORT_CONFIG
 from .serializers import ReportInputSerializer
-
-
-def dicfetchall(cursor):
-
-    columns = [col[0] for col in cursor.description]
-    return [ 
-        dict(zip(columns, row))
-        for row in cursor.fetchall()
-     ]
+from core.utils.db_utils import dict_fetch_all
 
 class AllDataAPI(APIView):
     authentication_classes = [TokenAuthentication]
@@ -29,7 +21,7 @@ class AllDataAPI(APIView):
 
             with connection.cursor() as cursor:
                 cursor.execute(query)
-                consult = dicfetchall(cursor)
+                consult = dict_fetch_all(cursor)
             
             results[table_name] = consult
         return Response(results)
@@ -47,6 +39,6 @@ class TableAPI(APIView):
         query = config['query']
         with connection.cursor() as cursor:
             cursor.execute(query)
-            results = dicfetchall(cursor)
+            results = dict_fetch_all(cursor)
         
         return Response(results)

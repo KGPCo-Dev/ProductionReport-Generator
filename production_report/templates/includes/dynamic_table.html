@@ -16,7 +16,7 @@
                 <tbody>
                     {% if results.0 %}
 
-                        {% for row in results.0 %}
+                        {% for row in results.0|slice:":200" %}
                         <tr>
                             {% for value in row.values %}
                                 {% if not forloop.first %}

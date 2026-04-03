@@ -7,13 +7,7 @@ from .queries import REPORT_CONFIG
 import pandas as pd
 import json
 from django.utils.formats import date_format
-
-def dicfetchall(cursor):
-    columns = [col[0] for col in cursor.description]
-    return [ 
-        dict(zip(columns, row))
-        for row in cursor.fetchall()
-     ]
+from core.utils.db_utils import dict_fetch_all
 
 def production_report_view(request):
     results = None
@@ -21,6 +15,9 @@ def production_report_view(request):
     headers = None
     chart_data = None
     production_results = []
+
+    # ---- Request comes from report_preview.html ---- #
+    # ---- Default value is production_report
     report_type = request.GET.get('report_type', 'production_report')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -42,7 +39,7 @@ def production_report_view(request):
             with connection.cursor() as cursor:
                 cursor.execute(query, params)
                 
-                results = dicfetchall(cursor)
+                results = dict_fetch_all(cursor)
 
                 if cursor.description:
                     headers = [col[0] for col in cursor.description]
@@ -77,16 +74,22 @@ def production_report_view(request):
                         graph_df = graph_df.sort_values(by=group_col)
 
                         chart_labels = graph_df[group_col].to_list()
+                        chart_results = graph_df['Amount'].to_list()
 
                     else:
-                        results_df[date_col] = pd.to_datetime(results_df[date_col])
 
-                        #We create a DF based on the results, grouped by Date#
-                        graph_df = results_df.groupby(date_col).size().reset_index(name='Amount')
-        
-                        chart_labels = [date_format(date, "Y-F-d") for date in graph_df[date_col]]
-                    
-                    chart_values = graph_df['Amount'].tolist()
+                        chart_query = chart_conf['chart_query'].format(shift_clause=shift_clause)
+
+                        with connection.cursor() as cursor:
+                            cursor.execute(chart_query, params)
+                            chart_results = dict_fetch_all(cursor)
+                        print(chart_results)
+
+                        chart_labels = [value['date_col'].strftime("%Y-%m-%d") for value in chart_results]
+                        chart_results = [value['amount'] for value in chart_results]
+
+
+                    chart_values = chart_results
         
                     chart_data = { 
                         'labels': chart_labels,

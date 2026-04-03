@@ -44,7 +44,7 @@
                 <div class="col-md-6">
                     <label for="report_type" class="form-label fw-bold">Tipo de Reporte:</label>
                     <select name="report_type" id="report_type" class="form-select">
-                        <option value="tethers_production" {% if report_type == 'tethers_production' %}selected{% endif %}>Produccion de Tethers</option>
+                        <option value="production_report" {% if report_type == 'production_report' %}selected{% endif %}>Produccion de Tethers</option>
                         <option value="final_test_report" {% if report_type == 'final_test_report' %}selected{% endif %}>Resultados Final Test</option>
                         <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap</option>
                     </select>
@@ -70,9 +70,12 @@
 <div id="dashboard-container" class="card mb-4 shadow-sm" style="display: none">
     <div class="card-body">
         <h4 class="card-title mb-3">Resumen de Produccion</h4>
-        <div style="height: 400px">
-            <canvas id="productionChart"></canvas>
+        <div style="width: 100%; overflow-x: auto;">
+            <div id="chartGrowBox" style="height: 400px; min-width: 100%">
+                <canvas id="productionChart"></canvas>
+            </div>
         </div>
+
     </div>
 </div>
 {% endif %}

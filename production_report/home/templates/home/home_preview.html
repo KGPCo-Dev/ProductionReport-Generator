@@ -4,8 +4,18 @@
 {% block content %}
 <div class="row justify-content-center">
 
-    <div id="final_test_kpi">
-        {% include "includes/kpi_card.html" with production_results=production_results %}
+    <div class="kpi-card-grid">
+        <div id="tethers_production_kpi">
+            {% include "includes/kpi_card.html" with production_results=test2_results %}
+        </div>
+
+        <div id="final_test_kpi">
+            {% include "includes/kpi_card.html" with production_results=finaltest_results border_theme="theme-greenview" %}
+        </div>
+
+        <div id="scrap_kpi">
+            {% include "includes/kpi_card.html" with production_results=scrap_results border_theme="theme-red" %}
+        </div>
     </div>
 
     <div class="col-md-6 home-selector mt-4">
