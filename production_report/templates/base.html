@@ -23,19 +23,15 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{% url 'home:home_screen' %}"> 
-                <img src="{% static 'img/logo.png' %}" alt="KGPCo Logo" width="120" height="60">
-            </a>
-        </div>
+    <nav class="navbar navbar-expand-lg d-flex border-bottom shadow-sm mb-4 or-navbar px-3">
+        {% include "includes/navigation_bar.html" %}
     </nav>
 
     <main class="container">
         {% block content %}
         {% endblock %}
     </main>
-    <footer class="text-center mt-5 py-3 text-muted">
+    <footer class="text-center mt-5 mb-5 px-6 py-12 md:px-12 md:py-16 border-t bg-background font-medium">
         <small>&copy; {% now "Y" %} KGPCo - Sistema de Reportes</small>
     </footer>
 

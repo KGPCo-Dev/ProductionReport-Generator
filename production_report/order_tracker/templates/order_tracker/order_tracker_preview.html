@@ -7,19 +7,6 @@
 
 {% block content %}
 
-  <div class="hero-card">
-    <h1 class="hero-title">Consulta detalles y estatus de orden</h1>
-    <p class="hero-subtitle">Ingrese el Numero de Orden para ver su estatus en timepo real</p>
-
-    <form id="order-search-bar" action="" method="get">
-      <input type="text" placeholder="Numero de Orden (Build ID)" name="search">
-      <button type="submit">
-        <i class="bi bi-search"></i>
-      </button>
-    </form>
-
-  </div>
-
   {% if build_id %}
 
     <div id="building_plan">
@@ -115,6 +102,10 @@
       </div>
     {% endif %}
 
+  {% else %}
+  <div class="hero-card">
+    <hi class="hero-title">Consulta estatus de orden</hi1>
+  </div>
   {% endif %}
 
 {% endblock %}

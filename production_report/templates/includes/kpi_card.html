@@ -1,7 +1,7 @@
 <div class="metrics-container">
     
     <div class="metrics-group {{ border_theme|default:'theme-blue' }}">
-        <span class="kpi-badge {% if production_results.2 >= 0 %}badge-ok{% else %}badge-bad{% endif %}">
+        <span class="kpi-badge {% if lower_is_better and production_results.2 <= 0 or not lower_is_better and production_results.2 >= 0 %}badge-ok{% else %}badge-bad{% endif %}">
         </span>
 
         <div class="kpi-header">
@@ -20,19 +20,19 @@
                 <h2>{{ production_results.1 }}</h2>
                 <span>{{ production_results.3 }}</span>
             </div>
-            <div class="kpi-block-variance {% if production_results.2 >= 0 %}positive{% else %}negative{% endif %}">
+            <div class="kpi-block-variance {% if lower_is_better and production_results.2 <= 0 or not lower_is_better and production_results.2 >= 0 %}positive{% else %}negative{% endif %}">
                 <span>VARIANZA</span>
                 <h2 style="color: inherit;">
                     {% if production_results.2 > 0 %}+{% endif %}{{ production_Results.2|floatformat:1 }}
                 </h2>
 
                 {% if production_results.2 > 0 %}
-                    <svg class="icon-tendency top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="icon-tendency top" style="color: {% if lower_is_better %}var(--kpi-red){% else %}var(--kpi-green){% endif %};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                 {% elif production_results.2 < 0 %}
-                    <svg class="icon-tendency down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="icon-tendency down" style="color: {% if lower_is_better %}var(--kpi-green){% else %}var(--kpi-red){% endif %};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                         <polyline points="17 18 23 18 23 12"></polyline>
                     </svg>
@@ -44,7 +44,8 @@
 
         <div class="kpi-summary">
                 <span style="display: block; font-size: 0.70rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Análisis de Desempeño</span>
-                Actual de <strong>{{ production_results.0 }}</strong> {{ production_results.3 }} contra la meta de <strong>{{ production_results.1 }}</strong> {{ production_results.3 }}, resultando en un cambio del <strong class="{% if production_results.2 >= 0 %}text-success{% else %}text-danger{% endif %}">{% if production_results.2 > 0 %}+{% endif %}{{ production_results.2|floatformat:1 }}%</strong> en rendimiento.
+                El registro actual es de <strong>{{ production_results.0 }}</strong> {{ production_results.3 }} contra <strong>{{ production_results.1 }}</strong> {{ production_results.3 }} de la semana pasada, resultando en un cambio del 
+                <strong class="{% if lower_is_better and production_results.2 <= 0 or not lower_is_better and production_results.2 >= 0%}text-success{% else %}text-danger{% endif %}">{% if production_results.2 > 0 %}+{% endif %}{{ production_results.2|floatformat:1 }}%</strong> en produccion.
             </div>
     </div>
 

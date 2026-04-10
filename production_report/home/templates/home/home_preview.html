@@ -10,11 +10,11 @@
         </div>
 
         <div id="final_test_kpi">
-            {% include "includes/kpi_card.html" with production_results=finaltest_results border_theme="theme-greenview" %}
+            {% include "includes/kpi_card.html" with production_results=finaltest_results border_theme="theme-green" %}
         </div>
 
         <div id="scrap_kpi">
-            {% include "includes/kpi_card.html" with production_results=scrap_results border_theme="theme-red" %}
+            {% include "includes/kpi_card.html" with production_results=scrap_results border_theme="theme-red" lower_is_better=True %}
         </div>
     </div>
 

@@ -1,16 +1,82 @@
-ORDER_FAIL_RESULTS_QUERY = """
+from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults
+
+def get_tethers_count(start_date, end_date):
+  return KgpTest2Results.objects.filter(
+    entered_date__gte=start_date,
+    entered_date__lt=end_date
+  ).exclude(
+    result_status='Rework'
+  ).exclude(
+    workplace__isnull=True
+  ).exclude(
+    workplace__exact=''
+  ).count
+
+def get_fibers_count(start_date, end_date):
+  return KgpFinaltestResults.objects.filter(
+    entered_date__gte=start_date,
+    entered_date__lt=end_date
+    ).exclude(
+      workplace__isnull=True
+    ).exclude(
+      workplace__exact=''
+    ).count()
+
+def get_scraps_count(start_date, end_date):
+  return KgpTest2Results.objects.filter(
+    result_status='Scrap',
+    entered_date__gte=start_date,
+    entered_date__lt=end_date
+  ).exclude(
+    workplace__exact=''
+  ).count()
+
+def get_order_details():
+  return list(KgpProductionOrders.objects.filter(
+    build_id=build_id
+  ).values(
+    'build_id', 'tethers', 'taps', 'cable_type', 'cable_length', 
+    'order_type', 'installation_type', 'fiber_count', 'planned_fibers', 
+    'spare_fibers'
+  ))
+
+def get_fails_results(build_id):
+  return list(KpgProcessFails.objects.filter(
+    build_id=build_id
+  ).values(
+    'build_id',
+    'global_tether',
+    'process_id',
+    'fail_amount',
+    fail_description=F('fail__fail_description')
+  ).order_by('-fail_amount'))
+
+def get_process_results(build_id):
+  return list(KpgProductionProcessResults.objects.filter(
+    build_id=build_id
+  ).values(
+    process_id=F('')
+  ))
+
+ORDER_RESULTS_QUERY = """
 SELECT
-  results.build_id,
-  results.global_tether,
   results.process_id,
-  fails.fail_description,
-  results.fail_amount
-FROM public.kpg_process_fails results
-JOIN public.kgp_process_fail_codes fails
-  ON results.fail_id = fails.fail_id
+  results.build_id AS "Orden",
+  process.process_name AS "Proceso",
+  results.process_start_time AS "Inicio del Proceso",
+  results.process_finish_time AS "Fin del Proceso",
+  results.employee_number AS "Empleado",
+  results.workplace AS "Estacion",
+  results.entered_date AS "Fecha",
+  results.global_tether AS "Numero de Tether",
+  results.tap_number AS "Locacion"
+FROM public.kpg_production_process_results AS results
+INNER JOIN public.kgp_production_process AS process ON results.process_id = process.process_id
+INNER JOIN public.kgp_production_orders AS orders ON results.build_id = orders.build_id
 WHERE results.build_id = %s
-ORDER by results.fail_amount DESC
+ORDER BY results.entered_date DESC
 """
+
 
 FINAL_TEST_REPORT_QUERY = """
 SELECT
@@ -38,41 +104,6 @@ WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
     AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
     {shift_clause}
 ORDER BY results.entered_date
-"""
-
-ORDER_RESULTS_QUERY = """
-SELECT
-  results.process_id,
-  results.build_id AS "Orden",
-  process.process_name AS "Proceso",
-  results.process_start_time AS "Inicio del Proceso",
-  results.process_finish_time AS "Fin del Proceso",
-  results.employee_number AS "Empleado",
-  results.workplace AS "Estacion",
-  results.entered_date AS "Fecha",
-  results.global_tether AS "Numero de Tether",
-  results.tap_number AS "Locacion"
-FROM public.kpg_production_process_results AS results
-INNER JOIN public.kgp_production_process AS process ON results.process_id = process.process_id
-INNER JOIN public.kgp_production_orders AS orders ON results.build_id = orders.build_id
-WHERE results.build_id = %s
-ORDER BY results.entered_date DESC
-"""
-
-ORDER_DETAILS_QUERY = """
-SELECT
-  build_id,
-  tethers,
-  taps,
-  cable_type,
-  cable_length,
-  order_type,
-  installation_type,
-  fiber_count,
-  planned_fibers,
-  spare_fibers
-FROM public.kgp_production_orders
-WHERE build_id = %s
 """
 
 ORDER_STATUS_QUERY = """
@@ -201,37 +232,6 @@ WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
     {shift_clause}
 GROUP BY (entered_date - INTERVAL '7 hours')::DATE
 ORDER BY date_col DESC;
-"""
-
-KPI_CARD_TETHERS_QUERY = """
-SELECT
-  COUNT(*) AS total_amount
-FROM public.kgp_test2_results results
-WHERE entered_date >= (%s::DATE) + INTERVAL '7 hours'
-    AND entered_date < %s
-    AND result_status IS DISTINCT FROM 'Rework'
-    AND workplace IS NOT NULL
-    AND workplace <> ''
-"""
-
-KPI_CARD_FIBERS_QUERY = """
-SELECT
-  COUNT(*) AS total_amount
-FROM public.kgp_finaltest_results results
-WHERE entered_date >= (%s::DATE) + INTERVAL '7 hours'
-    AND entered_date < %s
-    AND workplace IS NOT NULL
-    AND workplace <> ''
-"""
-
-KPI_CARD_SCRAP_QUERY = """
-SELECT
-  COUNT(*) AS total_amount
-FROM public.kgp_test2_results results
-WHERE entered_date >= (%s::DATE) + INTERVAL '7 hours'
-    AND entered_date < %s
-    AND result_status = 'Scrap'
-    AND workplace <> ''
 """
 
 REPORT_CONFIG = { 

@@ -2,69 +2,49 @@ from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from datetime import date
 from django.shortcuts import render
-from core.utils.db_utils import dict_fetch_all
+from reports.models import KgpTest2Results, KgpFinaltestResults
+from reports.queries import get_tethers_count, get_fibers_count, get_scraps_count
 
-from django.db import connection
-from reports.queries import KPI_CARD_SCRAP_QUERY, KPI_CARD_FIBERS_QUERY, KPI_CARD_TETHERS_QUERY
-
-
-def get_production_data(query, topic_str):
+def get_production_data(count_function, topic_str):
     #---- This funciton gets the current week and the last week results in order to compare them ----#
+    time_local = ZoneInfo("America/Monterrey")
+    current_date = datetime.now(time_local)
 
-    report_query = query
-
-    current_date = datetime.now(ZoneInfo("America/Monterrey"))
-    current_week_start = current_date - timedelta(days=current_date.weekday())
-
+    #---- current_week_start is used to get the other dates, 
+    # with timedelta it is seted to Current's week Monday at 7:00am ----#
+    current_week_start = (current_date - timedelta(days=current_date.weekday())).replace(hour=7, minute=0, second=0, microsecond=0)
     last_week_start = current_week_start - timedelta(days=7)
     last_week_end = current_date - timedelta(days=7)
 
-    current_week_params = [current_week_start, current_date]
-    last_week_params = [last_week_start, last_week_end]
+    start_last_week = last_week_start.replace(tzinfo=None)
+    end_last_week = last_week_end.replace(tzinfo=None)
+    start_current_week = current_week_start.replace(tzinfo=None)
+    end_current_week = current_date.replace(tzinfo=None)
 
-    last_week_results = get_week_production(report_query, last_week_params)
-    current_week_results = get_week_production(report_query, current_week_params)
+    last_week_results = count_function(start_last_week, end_last_week)
+    current_week_results = count_function(start_current_week, end_current_week)
 
 
     change = current_week_results - last_week_results
     diff_percentage = (change / last_week_results ) * 100 if last_week_results else 0
 
-    results = [current_week_results, last_week_results, diff_percentage, topic_str]
-
-    print("Current Date Value:", current_date)
+    print("Current Date Value with ORM:", current_date)
     print("Current Week Start Value:", current_week_start)
     print("Last Week End:", last_week_end)
     print("Last Week Start Value:", last_week_start)
 
-    return results
-
-
-def get_week_production(report_query, params):
-
-    query = report_query
-
-    with connection.cursor() as cursor:
-        cursor.execute(query, params)
-        results = dict_fetch_all(cursor)
-
-    print(results)
-    return results[0].get('total_amount', 0)
-
+    return [current_week_results, last_week_results, diff_percentage, topic_str]
 
 
 def home_view(request):
-
-    test2_query = KPI_CARD_TETHERS_QUERY
-    finaltest_query = KPI_CARD_FIBERS_QUERY
-    scrap_query = KPI_CARD_SCRAP_QUERY
 
     tethers_str = 'Tethers'
     fibers_str = 'Fibras'
     scrap_str = 'Scrap'
 
-    test2_results = get_production_data(test2_query, tethers_str)
-    finaltest_results = get_production_data(finaltest_query, fibers_str) 
-    scrap_results = get_production_data(scrap_query, scrap_str)   
+    test2_results = get_production_data(get_tethers_count, tethers_str)
+    finaltest_results = get_production_data(get_fibers_count, fibers_str)
+    scrap_results =  get_production_data(get_scraps_count, scrap_str)
 
     return render(request, 'home/home_preview.html', {
         'test2_results': test2_results,

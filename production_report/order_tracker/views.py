@@ -1,9 +1,7 @@
 from django.shortcuts import render
-from django.db import connection
-from reports.queries import REPORT_CONFIG, ORDER_DETAILS_QUERY, ORDER_FAIL_RESULTS_QUERY
 from reports.models import ProcessNames
-from core.utils.db_utils import dict_fetch_all
-
+from reports.queries import get_order_details, get_fails_results
+from django.db.models import F
 
 def order_tracker_view(request):
 
@@ -17,12 +15,7 @@ def order_tracker_view(request):
     if request.method == 'GET':
         if build_id:
 
-            production_orders_query = ORDER_DETAILS_QUERY
-            with connection.cursor() as order_details_cursor:
-                # Order Details Query #
-                order_details_cursor.execute(production_orders_query, [build_id])
-                order_details = dict_fetch_all(order_details_cursor)
-
+            order_details = get_order_details(build_id)
             process_results = get_process_results(request, build_id)
             test2_results = get_test2_results(request, build_id)
 
@@ -47,20 +40,12 @@ def get_process_results(request, build_id):
     # DB connection and config is created #
     config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['order_process_results'])
     query = config['query']
-    fails_results_query = ORDER_FAIL_RESULTS_QUERY
+    fails_results = get_fails_results(build_id)
     results = []
     headers = []
 
-    
-
-    with connection.cursor() as fails_results_cursor:
-        fails_results_cursor.execute(fails_results_query, [build_id])
-        fails_results = dict_fetch_all(fails_results_cursor)
-
-
-        if fails_results:
-            fails_headers = [col[0] for col in fails_results_cursor.description]
-
+    if fails_results:
+        fails_headers = [col[0] for col in fails_results_cursor.description]
 
     with connection.cursor() as process_results_cursor:
         process_results_cursor.execute(query, [build_id])
