@@ -10,11 +10,11 @@
   {% if build_id %}
 
     <div id="building_plan">
-      {% include "includes/building_plan.html" with order_details=order_details.0 build_id=build_id%}
+      {% include "includes/building_plan.html" with order_details=order_details build_id=build_id%}
     </div>
 
     <!-- Yield System Results -->
-    {% if process_results.0 %}
+    {% if process_results %}
 
       <!-- TetherStatusViewer -->
       <div class="accent-line me-3"></div>
@@ -85,7 +85,7 @@
     {% endif %}
 
     <!-- Test2 Results -->
-    {% if test2_results.0 %}
+    {% if test2_results %}
 
       <div class="d-flex align-items-center mb-4">
           <div class="accent-line me-3"></div>
@@ -93,7 +93,7 @@
       </div>
       
       <div class="js-table-container" id="test2-results-container">
-        {% include "includes/dynamic_table.html" with results=test2_results %}
+        {% include "includes/test2_results_table.html" with results=test2_results %}
       </div>
       {% else %}
       <div class="alert alert-warning text-center mt-4" role="alert">

@@ -11,7 +11,6 @@ django.setup()
 
 from django.test import TestCase
 from django.db import connection
-from reports.queries import ORDER_RESULTS_QUERY, ORDER_FAIL_RESULTS_QUERY,ORDER_DETAILS_QUERY
 from reports.api_queries import REPORT_CONFIG_TEST
 
 

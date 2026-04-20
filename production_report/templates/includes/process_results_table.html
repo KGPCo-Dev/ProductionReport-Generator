@@ -5,82 +5,77 @@
             <table id="processTable" class="table table-custom table-hover align-middle mb-0">
                 <thead class="text-white">
                     <tr>
-                        {% for header in results.1 %}
-                            <th class="py-3 px-4">{{ header }}</th>
-                        {% endfor %}
+                        <th class="py-3 px-4">Fecha</th>
+                        <th class="py-3 px-4">Proceso</th>
+                        <th class="py-3 px-4">Empleado</th>
+                        <th class="py-3 px-4">workplace</th>
+                        <th class="py-3 px-4">Tether</th>
+                        <th class="py-3 px-4">Inicio del proceso</th>
+                        <th class="py-3 px-4">Fin del proceso</th>
                     </tr>
                 </thead>
 
-                <!--
-                    results comes from process_results = [results, headers] on views.py
-                    so here we access just to headers values 
-                -->
                 <tbody>
-                    {% for row in results.0 %}
+                    {% for row in results %}
                         <tr>
+                            <td class="px-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    {% if row.fails %}
+                                        <button class="btn btn-sm p-0 me-2 text-primary border-0" type="button" data-bs-toggle="collapse" data-bs-target="#fails-row-{{ forloop.counter }}">
+                                            <i class="bi bi-chevron-right btn-toggle-icon"></i>
+                                        </button>
+                                    {% endif %}
+                                    <span>{{ row.entered_date|date:"Y-m-d"|default:"-" }}</span>
+                                </div>
+                            </td>
 
-                            <!--
-                                results is a list of dict, so we evaluete ignore process_id and fails
-                                to not render them on table 
-                            -->
-                            {% for key, value in row.items %}
-                                {% if key != 'fails' and key != 'process_id' %}
-                                    <td class="px-4 py-3">
-                                        <div class="d-flex align-items-center"> {% if key == 'Orden' and row.fails %}
-                                                <button class="btn btn-sm p-0 me-2 text-primary border-0"
-                                                        type="button"
-                                                        data-bs-toggle="collapse"
-                                                        data-bs-target="#fails-row-{{ forloop.parentloop.counter }}">
-                                                    <i class="bi bi-chevron-right btn-toggle-icon"></i>
-                                                </button>
-                                            {% endif %}
+                            <td class="px-4 py-3">{{ row.process.display_name|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.employee_number|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.workplace|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.global_tether|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.process_start_time|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.process_finish_time|default:"-" }}</td>
 
-                                            <span>{{ value|default:"-" }}</span> </div>
-                                    </td>
-                                {% endif %}
-                            {% endfor %}
                         </tr>
                         {% if row.fails %}
-                            <tr class="collapse" id="fails-row-{{ forloop.counter }}">
-                                <td colspan="{{ results.1|length }}" class="p-0 border-0 bg-light">
-                                    <div class="px-5 py-4 border-start border-primary border-4">
-                                        <h6 class="mb-3 text-dark fw-bold">
-                                            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-                                            Registro de Incidencias
-                                        </h6>
-                                        <div class="table-responsive rounded-3 shadow-sm bg-white">
-                                            <table class="table table-sm table-borderless mb-0">
-                                                <thead class="bg-dark text-white">
-                                                    <tr>
-                                                       <th class="ps-3 py-2">Incidencia</th>
-                                                       <th class="text-center py-2" style="width: 120px;">Intentos</th>
+                        <tr class="collapse" id="fails-row-{{ forloop.counter }}">
+                            <td colspan="7" class="p-0 border-0 bg-light">
+                                <div class="px-5 py-4 border-start border-primary border-4">
+                                    <h6 class="mb-3 text-dark fw-bold">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                        Registro de Incidencias
+                                    </h6>
+                                    <div class="table-responsive rounded-3 shadow-sm bg-white">
+                                        <table class="table table-sm table-borderless mb-0">
+                                            <thead class="bg-dark text-white">
+                                                <tr>
+                                                   <th class="ps3- py-2">Incidencia</th>
+                                                   <th class="text-center py-2" style="width:120px;">Intentos</th> 
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for falla in row.fails %}
+                                                    <tr class="{% cycle 'bg-orange-subtle' '' %} border-bottom">
+                                                        <td class="ps-3 py-2 text-secondary">{{ falla.fail.fail_description|default:"-" }}</td>
+                                                        <td class="text-center py-2">
+                                                            <span class="badge rounded-pill bg-danger-subtle text-danger">{{ falla.fail_amount|default:"0" }}</span>
+                                                        </td>
                                                     </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for falla in row.fails %}
-                                                        <tr class="{% cycle 'bg-orange-subtle' '' %} border-bottom">
-                                                            <td class="ps-3 py-2 text-secondary">{{ falla.Descripcion }}</td>
-                                                            <td class="text-center py-2">
-                                                                <span class="badge rounded-pill bg-danger-subtle text-danger">
-                                                                    {{ falla.Intentos }}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                </td>
-                            </tr>
+                                </div>
+                            </td>
+                        </tr>
                         {% endif %}
                         
                     {% empty %}
                         <tr>
-                            <td colspan="{{ results.1|length }}" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="bi bi-search d block fs-2 mb-2"></i>
-                                    No se encontraron regustros con los filtros seleccionados
+                                    No se encontraron registros con los filtros seleccionados
                                 </div>
                             </td>
                         </tr>

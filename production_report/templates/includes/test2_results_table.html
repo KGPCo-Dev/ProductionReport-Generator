@@ -1,0 +1,47 @@
+{% if results %}
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead class="text-white">
+                    <tr>
+                        <th class="py-3 px-4">Empleado</th>
+                        <th class="py-3 px-4">Fecha</th>
+                        <th class="py-3 px-4">Estacion</th>
+                        <th class="py-3 px-4">Turno</th>
+                        <th class="py-3 px-4">Celda</th>
+                        <th class="py-3 px-4">Avance de Tethers</th>
+                        <th class="py-3 px-4">Intentos</th>
+                        <th class="py-3 px-4">Estatus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in results %}
+                        <tr>
+                            <td class="px-4 py-3">{{ row.employee_number|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.entered_date|date:"Y-m-dH:i"|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.workplace|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.production_shift|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.production_cell|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ row.tethers_completed|default:"0" }}</td>
+                            <td class="px-4 py-3">{{ row.fail_quantity|default:"0" }}</td>
+                            <td class="px-4 py-3">
+                                <span class="badge {% if row.result_status == 'Finished' %}bg-success{% elif 'Scrap' in row.result_status %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                    {{ row.result_status|default:"-" }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{{ results|length }}" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-search d block fs-2 mb-2"></i>
+                                    No se encontraron registros con los filtros seleccionados
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}

@@ -1,6 +1,20 @@
+from datetime import timedelta
 from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults
+from django.db.models import F
+import pandas as pd
 
-def get_tethers_count(start_date, end_date):
+def get_single_order_test2_results(build_id):
+  return KgpTest2Results.objects.filter(
+    build=build_id
+  ).exclude(
+    result_status='Rework'
+  ).exclude(
+    workplace__isnull=True
+  ).exclude(
+    workplace__exact=''
+  ).select_related('build')
+
+def get_test2_results(start_date, end_date):
   return KgpTest2Results.objects.filter(
     entered_date__gte=start_date,
     entered_date__lt=end_date
@@ -10,9 +24,9 @@ def get_tethers_count(start_date, end_date):
     workplace__isnull=True
   ).exclude(
     workplace__exact=''
-  ).count
+  )
 
-def get_fibers_count(start_date, end_date):
+def get_finaltest_results(start_date, end_date):
   return KgpFinaltestResults.objects.filter(
     entered_date__gte=start_date,
     entered_date__lt=end_date
@@ -20,228 +34,142 @@ def get_fibers_count(start_date, end_date):
       workplace__isnull=True
     ).exclude(
       workplace__exact=''
-    ).count()
+    )
 
-def get_scraps_count(start_date, end_date):
+def get_scrap_results(start_date, end_date):
   return KgpTest2Results.objects.filter(
     result_status='Scrap',
     entered_date__gte=start_date,
     entered_date__lt=end_date
   ).exclude(
     workplace__exact=''
-  ).count()
+  )
 
-def get_order_details():
-  return list(KgpProductionOrders.objects.filter(
-    build_id=build_id
-  ).values(
-    'build_id', 'tethers', 'taps', 'cable_type', 'cable_length', 
-    'order_type', 'installation_type', 'fiber_count', 'planned_fibers', 
-    'spare_fibers'
-  ))
+def get_order_details(build_id):
+  return KgpProductionOrders.objects.filter(
+    build=build_id
+  ).first()
 
 def get_fails_results(build_id):
-  return list(KpgProcessFails.objects.filter(
-    build_id=build_id
-  ).values(
-    'build_id',
-    'global_tether',
-    'process_id',
-    'fail_amount',
-    fail_description=F('fail__fail_description')
-  ).order_by('-fail_amount'))
+  return KpgProcessFails.objects.filter(
+    build=build_id
+  ).select_related('fail').order_by('-fail_amount')
 
 def get_process_results(build_id):
-  return list(KpgProductionProcessResults.objects.filter(
-    build_id=build_id
-  ).values(
-    process_id=F('')
-  ))
+  return KpgProductionProcessResults.objects.filter(
+    build=build_id
+  ).select_related('process').order_by('-entered_date')
 
-ORDER_RESULTS_QUERY = """
-SELECT
-  results.process_id,
-  results.build_id AS "Orden",
-  process.process_name AS "Proceso",
-  results.process_start_time AS "Inicio del Proceso",
-  results.process_finish_time AS "Fin del Proceso",
-  results.employee_number AS "Empleado",
-  results.workplace AS "Estacion",
-  results.entered_date AS "Fecha",
-  results.global_tether AS "Numero de Tether",
-  results.tap_number AS "Locacion"
-FROM public.kpg_production_process_results AS results
-INNER JOIN public.kgp_production_process AS process ON results.process_id = process.process_id
-INNER JOIN public.kgp_production_orders AS orders ON results.build_id = orders.build_id
-WHERE results.build_id = %s
-ORDER BY results.entered_date DESC
-"""
+def get_scrap_report_data(start_date_str, end_date_str, shift=""):
+  start_date = pd.to_datetime(start_date_str) + timedelta(hours=7)
+  end_date = pd.to_datetime(end_date_str) + timedelta(days=1, hours=7)
 
+  queryset = KgpTest2Results.objects.filter(
+    entered_date__gte=start_date,
+    entered_date__lt=end_date,
+    result_status='Scrap'
+  ).select_related('build')
 
-FINAL_TEST_REPORT_QUERY = """
-SELECT
-  (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha de Produccion",
-  results.build_id AS "Orden",
-  results.employee_number AS "Empleado",
-  results.workplace AS "Mesa",
-  results.production_shift AS "Turno",
-  results.entered_date::date AS "Fecha de Registro",
-  results.production_hour AS "Hora",
-  TO_CHAR(results.entered_date, 'HH24:MI') AS "Tiempo de Registro",
-  orders.fiber_count AS "Fibras totales",
-  results.passed_fibers AS "Fibras aprobadas",
-  CASE
-    WHEN results.failed_fibers = '' THEN  '0'
-  END AS "Fibras fallidas",
-  CASE
-    WHEN results.finished IS true THEN 'Terminado'
-    ELSE 'No terminado'
-  END AS "Estatus"
-FROM public.kgp_finaltest_results results
-JOIN public.kgp_production_orders orders
-  ON results.build_id = orders.build_id
-WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
-    AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
-    {shift_clause}
-ORDER BY results.entered_date
-"""
+  if shift in ['1', '2']:
+    queryset = queryset.filter(production_shift=int(shift))
 
-ORDER_STATUS_QUERY = """
-SELECT
-    id,
-    build_id as "Orden",
-    entered_date::DATE AS "Fecha",
-    TO_CHAR(entered_date::TIME, 'HH24:MI') AS "Hora",
-    employee_number AS "Empleado",
-    workplace AS "Estacion",
-    production_cell AS "Celda",
-    production_shift AS "Turno",
-    tethers_completed || ' de ' || tethers_total AS "Tethers",
-    build_attempt AS "Intentos",
-    result_status AS "Estatus"
-FROM public.kgp_test2_results
-WHERE build_id = %s
-    AND result_status IS NOT NULL
-    AND workplace IS NOT NULL
-    AND workplace <> ''
-ORDER BY entered_date ASC
-"""
+  data=[]
+  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
+  for row in queryset:
+    production_date = row.entered_date - timedelta(hours=7)
 
-SCRAP_REPORT_QUERY = """
-SELECT
-    results.entered_date::DATE AS "Fecha de Registro",
-    TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
-    CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
-        WHEN 0 THEN 'Domingo'
-        WHEN 1 THEN 'Lunes'
-        WHEN 2 THEN 'Martes'
-        WHEN 3 THEN 'Miércoles'
-        WHEN 4 THEN 'Jueves'
-        WHEN 5 THEN 'Viernes'
-        WHEN 6 THEN 'Sábado'
-    END AS "Día",
-    (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha del Scrap",
-    results.build_id AS "Orden",
-    orders.cable_type AS "Tipo de Cable",
-    results.employee_number AS "Empleado",
-    results.workplace AS "Estacion",
-    results.production_cell AS "Celda",
-    results.production_hour AS "Hora",
-    results.production_shift AS "Turno"
-FROM public.kgp_test2_results results
-JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
-WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
-    AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
-    AND results.result_status = 'Scrap'
-    {shift_clause}
-ORDER BY results.entered_date
-"""
+    data.append({
+      "Orden": row.build.build if row.build else "-",
+      "Fecha de Registro": row.entered_date.strftime('%Y-%m-%d'),
+      "Hora de Registro": row.entered_date.strftime('%H:%M'),
+      "Dia": days[production_date.weekday()],
+      "Fecha de Incidencia": production_date.strftime('%Y-%m-%d'),
+      "Tipo de Cable": row.build.cable_type if row.build else "-",
+      "Empleado": row.employee_number if row.employee_number else "-",
+      "Estacion": row.workstation if row.workstation else "-",
+       "Hora": row.production_hour if row.production_hour else "-",
+       "Turno": row.shift if row.shift else "0" 
+    })
+  return data
 
-PRODUCTION_REPORT_QUERY = """
-SELECT
-    (results.entered_date - INTERVAL '7 hours')::DATE AS "Fecha de Produccion",
-    results.entered_date::DATE AS "Fecha de Registro",
-    TO_CHAR(results.entered_date, 'HH24:MI') AS "Hora de Registro",
-    CASE EXTRACT(DOW FROM (results.entered_date - INTERVAL '7 hours'))
-        WHEN 0 THEN 'Domingo'
-        WHEN 1 THEN 'Lunes'
-        WHEN 2 THEN 'Martes'
-        WHEN 3 THEN 'Miércoles'
-        WHEN 4 THEN 'Jueves'
-        WHEN 5 THEN 'Viernes'
-        WHEN 6 THEN 'Sábado'
-    END AS "Dia",
-    results.build_id AS "Orden",
-    orders.cable_type AS "Tipo de Cable",
-    results.production_hour AS "Hora",
-    results.employee_number AS "Empleado",
-    results.workplace AS "Estacion",
-    results.production_cell AS "Celda",
-    results.production_shift AS "Turno"
-FROM public.kgp_test2_results results
-JOIN public.kgp_production_orders orders ON results.build_id = orders.build_id
-WHERE results.entered_date >= (%s::DATE + INTERVAL '7 hours')
-    AND results.entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
-    AND results.workplace IS NOT NULL
-    AND results.workplace::integer < 6999
-    AND results.workplace <> ''
-    AND results.result_status IS DISTINCT  FROM 'Rework'
-    AND results.result_status IS DISTINCT  FROM 'Scrap'
-    {shift_clause}
-ORDER BY results.entered_date
-"""
+def get_production_report_date(start_date_str, end_date_str, shift=""):
+  start_date = pd.to_datetime(start_date_str) + timedelta(hours=7)
+  end_date = pd.to_datetime(end_date_str) + timedelta(days=1, hours=7)
 
-TETHERS_CHART_QUERY = """
-SELECT
-  (entered_date - INTERVAL '7 hours')::DATE AS date_col,
-  COUNT(*) AS Amount
-FROM public.kgp_test2_results results
-WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
-    AND entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
-    AND result_status IS DISTINCT FROM 'Rework'
-    AND workplace IS NOT NULL
-    AND workplace <> ''
-    {shift_clause}
-GROUP BY (entered_date - INTERVAL '7 hours')::DATE
-ORDER BY date_col DESC
-"""
+  queryset = KgpTest2Results.objects.filter(
+    entered_date__gte=start_date,
+    entered_date__lt=end_date,
+  ).exclude(
+    workplace__isnull=True,
+    workplace__exact="",
+    result_status='Rework'
+  ).select_related('build')
 
-FIBERS_CHART_QUERY = """
-SELECT
-  (entered_date - INTERVAL '7 hours')::DATE AS date_col,
-  COUNT(*) AS Amount
-FROM public.kgp_finaltest_results results
-WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
-    AND entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
-    AND workplace IS NOT NULL
-    AND workplace <> ''
-    {shift_clause}
-GROUP BY (entered_date - INTERVAL '7 hours')::DATE
-ORDER BY date_col DESC
-"""
+  if shift in ['1', '2']:
+    queryset = queryset.filter(production_shift=int(shift))
 
-SCRAP_CHART_QUERY = """
-SELECT
-  (entered_date - INTERVAL '7 hours')::DATE AS date_col,
-  COUNT(*) AS Amount
-FROM public.kgp_test2_results results
-WHERE entered_date >= (%s::DATE + INTERVAL '7 hours')
-    AND entered_date < (%s::DATE + INTERVAL '1 day' + INTERVAL '7 hours')
-    AND result_status = 'Scrap'
-    {shift_clause}
-GROUP BY (entered_date - INTERVAL '7 hours')::DATE
-ORDER BY date_col DESC;
-"""
+  data=[]
+  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+  for row in queryset:
+    production_date = row.entered_date - timedelta(hours=7)
+    data.append({
+      "Orden": row.build.build if row.build.build else "-",
+      "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
+      "Hora de Registro": row.entered_date.strftime("%H:%M"),
+      "Dia de Produccion": days[production_date.weekday()],
+      "Tipo de Cable": row.build.cable_type if row.build else "-",
+      "Empleado": row.employee_number if row.employee_number else "-" ,
+      "Estacion":row.workplace if row.workplace else "-",
+      "Turno": row.production_shift if row.production_shift else "-"
+    })
+  return data
+
+def get_fibers_report_date(start_date_str, end_date_str, shift=""):
+  start_date = pd.to_datetime(start_date_str) + timedelta(hours=7)
+  end_date = pd.to_datetime(end_date_str) + timedelta(days=1, hours=7)
+
+  queryset = KgpFinaltestResults.objects.filter(
+    entered_date__gte=start_date,
+    entered_date__lt=end_date
+  ).exclude(
+    workplace__isnull=True,
+    workplace__exact=""
+  ).select_related('build')
+
+  if shift in ['1', '2']:
+    queryset= queryset.filter(production_shift=int(shift))
+
+  data =[]
+  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+  for row in queryset:
+    passed_fibers = row.passed_fibers or 0
+    failed_fibers = row.failed_fibers or 0
+    done_fibers = failed_fibers +passed_fibers
+
+    data.append({
+      "Orden": row.build.build if row.build.build else "-",
+      "Empleado": row.employee_number if row.employee_number else "-",
+      "Mesa": row.workplace if row.workplace else "-",
+      "Turno": row.production_shift if row.production_shift else "-",
+      "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
+      "Hora de Registro": row.entered_date.strftime("%H:%M"),
+      "Fibras Totales": row.build.fiber_count if row.build.fiber_count else "-",
+      "Fibras Probadas": passed_fibers if passed_fibers else "-",
+      "Fbras Fallidas": failed_fibers if failed_fibers else "-",
+      "Estatus": "Terminado" if done_fibers >= row.build.fiber_count else "No Terminado" 
+    })
+  return data
 
 REPORT_CONFIG = { 
     'scrap_report': { 
-        'query': SCRAP_REPORT_QUERY,
+        'query': get_scrap_report_data,
         'filename': 'Reporte de Scrap',
         'sheet_name': 'Scrap',
         'chart_config': { 
             'date_col': 'Fecha del Scrap',
-            'chart_query':SCRAP_CHART_QUERY,
             'hour_col': 'Hora',
             'label': 'Ordenes Scrap',
             'base_color': '#da1d1df1',
@@ -250,12 +178,11 @@ REPORT_CONFIG = {
          }
     },
     'final_test_report': { 
-        'query': FINAL_TEST_REPORT_QUERY,
+        'query': get_fibers_report_date,
         'filename': 'Reporte Final Test',
         'sheet_name': 'Final Test',
         'chart_config': { 
-            'date_col': 'Fecha de Produccion',
-            'chart_query':FIBERS_CHART_QUERY,
+            'date_col': 'Fecha de Registro',
             'hour_col': 'Hora',
             'label': 'Fibras',
             'base_color': '#29b457cb',
@@ -264,44 +191,16 @@ REPORT_CONFIG = {
         }
     },
     'production_report': { 
-        'query': PRODUCTION_REPORT_QUERY,
+        'query': get_production_report_date,
         'filename': 'Reporte de Produccion',
         'sheet_name': 'Produccion',
         'chart_config': { 
-            'date_col': 'Fecha de Produccion',
-            'chart_query':TETHERS_CHART_QUERY,
+            'date_col': 'Fecha de Registro',
             'hour_col': 'Hora',
             'label': 'Tethers Producidos',
             'base_color': '#0d6efd',
             'lighter_color': 'rgba(13, 110, 253, 0.8)',
             'darker_color': 'rgba(13, 110, 253, 0.3)'
-         }
-    },
-    'order_status_results': { 
-        'query': ORDER_STATUS_QUERY,
-        'filename': 'Resultados de Orden',
-        'sheet_name': 'Order_Results',
-        'chart_config': { 
-            'date_col': 'Fecha de Registro',
-            'label': 'Piezas Diaria'
-         }
-    },
-    'order_process_results': { 
-        'query': ORDER_RESULTS_QUERY,
-        'filename': 'Resultados de Orden',
-        'sheet_name': 'Order_Results',
-        'chart_config': { 
-            'date_col': 'Fecha de Registro',
-            'label': 'Resultados'
-         }
-    },
-    'order_fail_results': { 
-        'query': ORDER_FAIL_RESULTS_QUERY,
-        'filename': 'Resultados de Orden',
-        'sheet_name': 'Order_Results',
-        'chart_config': { 
-            'date_col': 'Fecha de Registro',
-            'label': 'Resultados'
          }
     },
  }

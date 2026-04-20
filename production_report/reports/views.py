@@ -1,13 +1,10 @@
+from reports.queries import REPORT_CONFIG
 from django.shortcuts import render
 from django.http import HttpResponse
 import openpyxl
 from django.utils import timezone
-from django.db import connection
-from .queries import REPORT_CONFIG
 import pandas as pd
 import json
-from django.utils.formats import date_format
-from core.utils.db_utils import dict_fetch_all
 
 def production_report_view(request):
     results = None
@@ -25,40 +22,29 @@ def production_report_view(request):
 
     if request.method == 'GET':
         if start_date and end_date:
-            is_short_range = False
-            params = [start_date, end_date]
-            shift_clause = ""
-
-            if shift in ['1', '2']:
-                shift_clause = "AND results.production_shift = %s"
-                params.append(int(shift))
-            
             config = REPORT_CONFIG.get(report_type, REPORT_CONFIG['production_report'])
-            query = config['query'].format(shift_clause=shift_clause)
+            query_function = config.get('query')
 
-            with connection.cursor() as cursor:
-                cursor.execute(query, params)
-                
-                results = dict_fetch_all(cursor)
-
-                if cursor.description:
-                    headers = [col[0] for col in cursor.description]
-            
-            #We create the structure to render de Dashboard
+            if query_function:
+                results = query_function(start_date, end_date, shift)
+            else:
+                results = []
+            if results and len(results) >0:
+                headers = list(results[0].keys())
+            else:
+                headers = []
             results_df = pd.DataFrame(results, columns=headers)
-            
-            #We define if start and end date is bigger than one day to decide wich templete to use
+
+            is_short_range = False
             try:
                 start_dt = pd.to_datetime(start_date)
                 end_dt = pd.to_datetime(end_date)
-
                 if start_dt.date() == end_dt.date():
                     is_short_range = True
-                else:
-                    is_short_range = False
-
-            except Exception as e:
+            except Exception:
                 pass
+            
+            chart_data = None
 
             if not results_df.empty:
                 chart_conf = config.get('chart_config')
@@ -66,40 +52,27 @@ def production_report_view(request):
                 if chart_conf:
                     date_col = chart_conf['date_col']
                     hour_col = chart_conf['hour_col']
-                    
+
                     if is_short_range and hour_col and hour_col in results_df.columns:
                         group_col = hour_col
-
+                    else:
+                        group_col = date_col
+                    
+                    if group_col in results_df.columns:
                         graph_df = results_df.groupby(group_col).size().reset_index(name='Amount')
                         graph_df = graph_df.sort_values(by=group_col)
 
-                        chart_labels = graph_df[group_col].to_list()
-                        chart_results = graph_df['Amount'].to_list()
+                        chart_labels = graph_df[group_col].astype(str).to_list()
+                        chart_values = graph_df['Amount'].to_list()
 
-                    else:
-
-                        chart_query = chart_conf['chart_query'].format(shift_clause=shift_clause)
-
-                        with connection.cursor() as cursor:
-                            cursor.execute(chart_query, params)
-                            chart_results = dict_fetch_all(cursor)
-                        print(chart_results)
-
-                        chart_labels = [value['date_col'].strftime("%Y-%m-%d") for value in chart_results]
-                        chart_results = [value['amount'] for value in chart_results]
-
-
-                    chart_values = chart_results
-        
-                    chart_data = { 
-                        'labels': chart_labels,
-                        'data': chart_values,
-                        'label': chart_conf['label'],
-                        'base_color': chart_conf['base_color'],
-                        'lighter_color': chart_conf['lighter_color'],
-                        'darker_color': chart_conf['darker_color']
-                    }
-                        
+                        chart_data = {
+                            'labels': chart_labels,
+                            'data': chart_values,
+                            'label': chart_conf['label'],
+                            'base_color': chart_conf['base_color'],
+                            'lighter_color': chart_conf['lighter_color'],
+                            'darker_color': chart_conf['darker_color']
+                        }
 
             if 'export' in request.GET:
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
@@ -113,10 +86,9 @@ def production_report_view(request):
                 for row in results:
                     if hour_col_name in row:
                         del row[hour_col_name]
-
+            
             if headers:
                 production_results = [results, headers]
-        
 
     return render(request, 'reports/report_preview.html', { 
         'results': results,

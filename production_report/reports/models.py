@@ -41,7 +41,7 @@ class AgentDocument(models.Model):
     id = models.BigAutoField(primary_key=True)
     title = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField()
-    sharepoint_id = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    sharepoint = models.CharField(unique=True, max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -141,7 +141,7 @@ class AuthtokenToken(models.Model):
 
 class DjangoAdminLog(models.Model):
     action_time = models.DateTimeField()
-    object_id = models.TextField(blank=True, null=True)
+    object = models.TextField(blank=True, null=True)
     object_repr = models.CharField(max_length=200)
     action_flag = models.SmallIntegerField()
     change_message = models.TextField()
@@ -195,7 +195,7 @@ class DjangoSite(models.Model):
 
 class KgpCompletedOrders(models.Model):
     id = models.BigAutoField(primary_key=True)
-    build_id = models.TextField()
+    build = models.TextField()
     tethers_total = models.BigIntegerField(blank=True, null=True)
     completed_date = models.DateTimeField(blank=True, null=True)
     production_shift = models.IntegerField(blank=True, null=True)
@@ -212,7 +212,7 @@ class KgpCompletedOrders(models.Model):
 
 
 class KgpEmployees(models.Model):
-    employee_id = models.BigAutoField(primary_key=True)
+    employee = models.BigAutoField(primary_key=True)
     employee_number = models.BigIntegerField(unique=True)
     employee_name = models.TextField(blank=True, null=True)
     shift = models.IntegerField()
@@ -241,7 +241,7 @@ class KgpFinaltestMetricsDaily(models.Model):
 
 class KgpFinaltestResults(models.Model):
     entered_date = models.DateTimeField()
-    build_id = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build_id')
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build')
     employee_number = models.BigIntegerField(blank=True, null=True)
     workplace = models.TextField(blank=True, null=True)
     passed_fibers = models.BigIntegerField(blank=True, null=True)
@@ -253,8 +253,8 @@ class KgpFinaltestResults(models.Model):
     production_hour = models.SmallIntegerField(blank=True, null=True)
     production_shift = models.SmallIntegerField(blank=True, null=True)
     scrap_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='scrap_auditor', to_field='employee_number', blank=True, null=True)
-    scrap_0 = models.ForeignKey('KgpScrapCodes', models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
-    fail_id = models.ForeignKey('KgpProcessFailCodes', models.DO_NOTHING, blank=True, null=True)
+    scrap_fk_value = models.ForeignKey('KgpScrapCodes', models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
+    fail = models.ForeignKey('KgpProcessFailCodes', models.DO_NOTHING, blank=True, null=True, db_column="fail_id")
     hold_time_total = models.IntegerField(blank=True, null=True)
     active_time_total = models.IntegerField(blank=True, null=True)
     time_total = models.IntegerField(blank=True, null=True)
@@ -266,7 +266,7 @@ class KgpFinaltestResults(models.Model):
 
 
 class KgpOrdersStatus(models.Model):
-    status_id = models.AutoField(primary_key=True)
+    status = models.AutoField(primary_key=True)
     status_code = models.TextField(unique=True, blank=True, null=True)
     status_description = models.TextField(blank=True, null=True)
     internal_descrption = models.TextField(blank=True, null=True, db_comment='This section is to explain what every code is')
@@ -277,7 +277,7 @@ class KgpOrdersStatus(models.Model):
 
 
 class KgpOvertimeReasons(models.Model):
-    overtime_id = models.BigAutoField(primary_key=True)
+    overtime = models.BigAutoField(primary_key=True)
     overtime_desciption = models.TextField(unique=True, blank=True, null=True)
 
     class Meta:
@@ -286,8 +286,8 @@ class KgpOvertimeReasons(models.Model):
 
 
 class KgpProcessFailCodes(models.Model):
-    fail_id = models.AutoField(primary_key=True)
-    process_id = models.ForeignKey('KgpProductionProcess', models.DO_NOTHING)
+    fail = models.AutoField(primary_key=True, db_column="fail_id")
+    process = models.ForeignKey('KgpProductionProcess', models.DO_NOTHING)
     fail_description = models.TextField()
 
     class Meta:
@@ -296,9 +296,9 @@ class KgpProcessFailCodes(models.Model):
 
 
 class KgpProductionOrderSetup(models.Model):
-    id = models.BigAutoField(primary_key=True)  # The composite primary key (id, build_id) found, that is not supported. The first column is selected.
+    id = models.BigAutoField(primary_key=True)  # The composite primary key (id, build) found, that is not supported. The first column is selected.
     updated_date = models.DateTimeField()
-    build_id = models.TextField(unique=True)
+    build = models.TextField(unique=True)
     location_setup = models.TextField(blank=True, null=True)
     tethers_registered = models.IntegerField(blank=True, null=True)
     locations_registered = models.IntegerField(blank=True, null=True)
@@ -308,13 +308,13 @@ class KgpProductionOrderSetup(models.Model):
     class Meta:
         managed = False
         db_table = 'kgp_production_order_setup'
-        unique_together = (('id', 'build_id'),)
+        unique_together = (('id', 'build'),)
 
 
 class KgpProductionOrders(models.Model):
     id = models.BigAutoField(primary_key=True)
     entered_date = models.DateTimeField()
-    build_id = models.TextField(unique=True, blank=True, null=True)
+    build = models.TextField(unique=True, blank=True, null=True, db_column='build_id')
     fiber_count = models.BigIntegerField(blank=True, null=True)
     planned_fibers = models.BigIntegerField(blank=True, null=True)
     spare_fibers = models.BigIntegerField(blank=True, null=True)
@@ -332,10 +332,17 @@ class KgpProductionOrders(models.Model):
 
 
 class KgpProductionProcess(models.Model):
-    process_id = models.AutoField(primary_key=True)
+    process = models.AutoField(primary_key=True, db_column='process_id')
     process_name = models.TextField(unique=True)
     estimated_time = models.IntegerField()
     process_description = models.TextField(blank=True, null=True)
+
+    @property
+    def display_name(self):
+        try:
+            return ProcessNames(self.process_name).label
+        except ValueError:
+            return f"Desconocido ({self.process_name})"
 
     class Meta:
         managed = False
@@ -345,7 +352,7 @@ class KgpProductionProcess(models.Model):
 class KgpProductionRework(models.Model):
     id = models.BigAutoField(primary_key=True)
     entered_date = models.DateTimeField()
-    build_id = models.TextField(blank=True, null=True)
+    build = models.TextField(blank=True, null=True)
     workplace = models.SmallIntegerField(blank=True, null=True)
     rework_auditor = models.IntegerField(blank=True, null=True)
     shift = models.SmallIntegerField(blank=True, null=True)
@@ -359,14 +366,14 @@ class KgpProductionRework(models.Model):
 class KgpProductionScrap(models.Model):
     id = models.BigAutoField(primary_key=True)
     entered_date = models.DateTimeField()
-    build_id = models.TextField(blank=True, null=True)
+    build = models.TextField(blank=True, null=True)
     workplace = models.SmallIntegerField(blank=True, null=True)
-    process_id = models.SmallIntegerField(blank=True, null=True)
+    process = models.SmallIntegerField(blank=True, null=True)
     employee_number = models.IntegerField(blank=True, null=True)
     scrap_auditor = models.IntegerField(blank=True, null=True)
     tap_number = models.SmallIntegerField(blank=True, null=True)
     global_tether = models.SmallIntegerField(blank=True, null=True)
-    scrap_id = models.SmallIntegerField(blank=True, null=True)
+    scrap = models.SmallIntegerField(blank=True, null=True)
     shift = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
@@ -381,7 +388,7 @@ class KgpProductionWorkstations(models.Model):
     station = models.SmallIntegerField(blank=True, null=True)
     workplace = models.SmallIntegerField(unique=True, blank=True, null=True)
     status = models.TextField(blank=True, null=True)
-    working_build_id = models.TextField(blank=True, null=True)
+    working_build = models.TextField(blank=True, null=True)
     working_build_location = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
@@ -390,8 +397,8 @@ class KgpProductionWorkstations(models.Model):
 
 
 class KgpReworkCodes(models.Model):
-    rework_id = models.BigAutoField(primary_key=True)
-    process_id = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
+    rework = models.BigAutoField(primary_key=True)
+    process = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
     rework_description = models.TextField(blank=True, null=True)
     rework_code = models.TextField(blank=True, null=True)
 
@@ -401,8 +408,8 @@ class KgpReworkCodes(models.Model):
 
 
 class KgpScrapCodes(models.Model):
-    scrap_id = models.BigAutoField(primary_key=True)
-    process_id = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
+    scrap = models.BigAutoField(primary_key=True)
+    process = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
     scrap_description = models.TextField(blank=True, null=True)
     scrap_code = models.TextField(unique=True, blank=True, null=True)
     scrap_description_spanish = models.TextField(blank=True, null=True)
@@ -415,7 +422,7 @@ class KgpScrapCodes(models.Model):
 class KgpSubensambleResults(models.Model):
     id = models.BigAutoField(primary_key=True)
     entered_date = models.DateTimeField()
-    build_id = models.TextField(blank=True, null=True)
+    build = models.TextField(blank=True, null=True)
     tether_description = models.TextField(blank=True, null=True)
     tether_quantity = models.BigIntegerField(blank=True, null=True)
     finished = models.BooleanField(blank=True, null=True)
@@ -425,13 +432,13 @@ class KgpSubensambleResults(models.Model):
     local_tether = models.IntegerField(blank=True, null=True)
     global_tether = models.IntegerField(blank=True, null=True)
     overtime_reason = models.ForeignKey(KgpOvertimeReasons, models.DO_NOTHING, db_column='overtime_reason', blank=True, null=True)
-    fail_id = models.IntegerField(blank=True, null=True)
+    fail = models.IntegerField(blank=True, null=True)
     rework = models.BooleanField(blank=True, null=True)
     rework_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='rework_auditor', to_field='employee_number', blank=True, null=True)
-    rework_0 = models.ForeignKey(KgpReworkCodes, models.DO_NOTHING, db_column='rework_id', blank=True, null=True)  # Field renamed because of name conflict.
+    rework_fk_value = models.ForeignKey(KgpReworkCodes, models.DO_NOTHING, db_column='rework_id', blank=True, null=True)  # Field renamed because of name conflict.
     scrap = models.BooleanField(blank=True, null=True)
     scrap_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='scrap_auditor', to_field='employee_number', related_name='kgpsubensambleresults_scrap_auditor_set', blank=True, null=True)
-    scrap_0 = models.ForeignKey(KgpScrapCodes, models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
+    scrap_kf_value = models.ForeignKey(KgpScrapCodes, models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
     hold_time_total = models.IntegerField(blank=True, null=True)
     active_time_total = models.IntegerField(blank=True, null=True)
     time_total = models.IntegerField(blank=True, null=True)
@@ -464,7 +471,7 @@ class KgpTest2MetricsDaily(models.Model):
 class KgpTest2Results(models.Model):
     id = models.BigAutoField(primary_key=True)
     entered_date = models.DateTimeField(blank=True, null=True)
-    build_id = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build_id', blank=True, null=True)
+    build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build', blank=True, null=True)
     employee_number = models.BigIntegerField(blank=True, null=True)
     workplace = models.TextField(blank=True, null=True)
     tethers_completed = models.BigIntegerField(blank=True, null=True)
@@ -477,9 +484,9 @@ class KgpTest2Results(models.Model):
     tethers_total = models.BigIntegerField(blank=True, null=True)
     result_status = models.TextField(blank=True, null=True)
     scrap_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='scrap_auditor', to_field='employee_number', blank=True, null=True)
-    scrap_0 = models.ForeignKey(KgpScrapCodes, models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
+    scrap_fk_value = models.ForeignKey(KgpScrapCodes, models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
     fail_quantity = models.IntegerField(blank=True, null=True)
-    fail_id = models.ForeignKey(KgpProcessFailCodes, models.DO_NOTHING, blank=True, null=True)
+    fail = models.ForeignKey(KgpProcessFailCodes, models.DO_NOTHING, blank=True, null=True, db_column="fail_id")
     rework_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='rework_auditor', to_field='employee_number', related_name='kgptest2results_rework_auditor_set', blank=True, null=True)
     rework = models.ForeignKey(KgpReworkCodes, models.DO_NOTHING, blank=True, null=True)
     hold_time_total = models.IntegerField(blank=True, null=True)
@@ -493,13 +500,13 @@ class KgpTest2Results(models.Model):
 
 class KpgProcessFails(models.Model):
     id = models.BigAutoField(primary_key=True)
-    build_id = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build_id', blank=True, null=True)
+    build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build', blank=True, null=True)
     global_tether = models.IntegerField(blank=True, null=True)
     entered_date = models.DateTimeField()
     employee_number = models.BigIntegerField(blank=True, null=True)
     workplace = models.TextField(blank=True, null=True)
-    process_id = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
-    fail_id = models.ForeignKey(KgpProcessFailCodes, models.DO_NOTHING)
+    process = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING)
+    fail = models.ForeignKey(KgpProcessFailCodes, models.DO_NOTHING, db_column="fail_id")
     fail_amount = models.IntegerField()
     shift = models.SmallIntegerField(blank=True, null=True)
 
@@ -510,7 +517,7 @@ class KpgProcessFails(models.Model):
 
 class KpgProductionProcessResults(models.Model):
     id = models.BigAutoField(primary_key=True)
-    build_id = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build_id', blank=True, null=True)
+    build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, to_field='build', blank=True, null=True)
     entered_date = models.DateTimeField()
     employee_number = models.BigIntegerField(blank=True, null=True)
     workplace = models.TextField(blank=True, null=True)
@@ -521,8 +528,8 @@ class KpgProductionProcessResults(models.Model):
     active_time_total = models.IntegerField(blank=True, null=True)
     time_total = models.IntegerField(blank=True, null=True)
     result_status = models.ForeignKey(KgpOrdersStatus, models.DO_NOTHING, db_column='result_status', to_field='status_code', blank=True, null=True)
-    tether_id = models.IntegerField(editable=False, blank=True, null=True)
-    process_id = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING, blank=True, null=True)
+    tether = models.IntegerField(editable=False, blank=True, null=True, db_column='tether_id')
+    process = models.ForeignKey(KgpProductionProcess, models.DO_NOTHING, blank=True, null=True)
     process_start_time = models.TextField(blank=True, null=True)
     process_finish_time = models.TextField(blank=True, null=True)
     attempt_number = models.SmallIntegerField(blank=True, null=True)
@@ -562,10 +569,10 @@ class SocialaccountSocialaccount(models.Model):
 class SocialaccountSocialapp(models.Model):
     provider = models.CharField(max_length=30)
     name = models.CharField(max_length=40)
-    client_id = models.CharField(max_length=191)
+    client = models.CharField(max_length=191)
     secret = models.CharField(max_length=191)
     key = models.CharField(max_length=191)
-    provider_id = models.CharField(max_length=200)
+    provider = models.CharField(max_length=200)
     settings = models.JSONField()
 
     class Meta:
@@ -599,12 +606,12 @@ class SocialaccountSocialtoken(models.Model):
 
 class TetherTypes(models.Model):
     id = models.BigAutoField(primary_key=True)
-    tether_id = models.TextField(blank=True, null=True)
+    tether = models.TextField(blank=True, null=True)
     tether_description = models.TextField(blank=True, null=True)
     connector_type = models.TextField(blank=True, null=True)
     order_type = models.TextField(blank=True, null=True)
     installation_type = models.TextField(blank=True, null=True)
-    situation_id = models.TextField(blank=True, null=True)
+    situation = models.TextField(blank=True, null=True)
     tether_length = models.TextField(blank=True, null=True)
 
     class Meta:

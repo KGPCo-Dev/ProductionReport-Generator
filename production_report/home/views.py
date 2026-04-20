@@ -2,10 +2,26 @@ from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from datetime import date
 from django.shortcuts import render
-from reports.models import KgpTest2Results, KgpFinaltestResults
-from reports.queries import get_tethers_count, get_fibers_count, get_scraps_count
+from reports.queries import get_test2_results, get_finaltest_results, get_scrap_results
 
-def get_production_data(count_function, topic_str):
+def home_view(request):
+
+    tethers_str = 'Tethers'
+    fibers_str = 'Fibras'
+    scrap_str = 'Scrap'
+
+    test2_results = count_production_data(get_test2_results, tethers_str)
+    finaltest_results = count_production_data(get_finaltest_results, fibers_str)
+    scrap_results =  count_production_data(get_scrap_results, scrap_str)
+
+    return render(request, 'home/home_preview.html', {
+        'test2_results': test2_results,
+        'finaltest_results': finaltest_results,
+        'scrap_results': scrap_results
+    })
+
+
+def count_production_data(fetch_function, topic_str):
     #---- This funciton gets the current week and the last week results in order to compare them ----#
     time_local = ZoneInfo("America/Monterrey")
     current_date = datetime.now(time_local)
@@ -21,8 +37,8 @@ def get_production_data(count_function, topic_str):
     start_current_week = current_week_start.replace(tzinfo=None)
     end_current_week = current_date.replace(tzinfo=None)
 
-    last_week_results = count_function(start_last_week, end_last_week)
-    current_week_results = count_function(start_current_week, end_current_week)
+    last_week_results = int(fetch_function(start_last_week, end_last_week).count())
+    current_week_results = int(fetch_function(start_current_week, end_current_week).count())
 
 
     change = current_week_results - last_week_results
@@ -34,21 +50,3 @@ def get_production_data(count_function, topic_str):
     print("Last Week Start Value:", last_week_start)
 
     return [current_week_results, last_week_results, diff_percentage, topic_str]
-
-
-def home_view(request):
-
-    tethers_str = 'Tethers'
-    fibers_str = 'Fibras'
-    scrap_str = 'Scrap'
-
-    test2_results = get_production_data(get_tethers_count, tethers_str)
-    finaltest_results = get_production_data(get_fibers_count, fibers_str)
-    scrap_results =  get_production_data(get_scraps_count, scrap_str)
-
-    return render(request, 'home/home_preview.html', {
-        'test2_results': test2_results,
-        'finaltest_results': finaltest_results,
-        'scrap_results': scrap_results
-    })
-# Create your views here.
