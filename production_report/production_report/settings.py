@@ -9,8 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-from django.conf.global_settings import LOGOUT_REDIRECT_URL
-from django.conf.global_settings import MEDIA_ROOT
+
 import os
 import dj_database_url
 from pathlib import Path
@@ -191,5 +190,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+LOGIN_URL ='accounts/login/'
 LOGIN_REDIRECT_URL ='/'
 LOGOUT_REDIRECT_URL ='/'

@@ -1,8 +1,10 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from reports.models import ProcessNames
 from reports.queries import get_order_details, get_fails_results, get_process_results, get_single_order_test2_results
 from django.db.models import F
 
+@login_required
 def order_tracker_view(request):
 
     build_id = request.GET.get('search')

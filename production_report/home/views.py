@@ -1,9 +1,11 @@
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from datetime import date
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from reports.queries import get_test2_results, get_finaltest_results, get_scrap_results
 
+@login_required
 def home_view(request):
 
     tethers_str = 'Tethers'

@@ -1,4 +1,5 @@
 from reports.queries import REPORT_CONFIG
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import HttpResponse
 import openpyxl
@@ -6,6 +7,7 @@ from django.utils import timezone
 import pandas as pd
 import json
 
+@login_required
 def production_report_view(request):
     results = None
     results = None

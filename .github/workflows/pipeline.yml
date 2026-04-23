@@ -1,0 +1,54 @@
+name: Report-Generator Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Step 1 - Download code
+        uses: actions/checkout@v4
+
+      - name: Step 2 - Install Python on Machine
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Step 3 - Install the Libraries
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Step 4 - Check Backend Health
+        run: |
+          python production_report/manage.py check
+      
+      - name: Step 5 - Sign-in a Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME  }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Step 6 - Build and Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME  }}/productionreport:latest
+
+  deploy-to-windows:
+    needs: build-and-test
+
+    runs-on: self-hosted
+
+    steps:
+      - name: Update and Start Localy
+
+        run: |
+          cd C:\Software\ProductionReport-Generator
+          docker compose pull
+          docker compose up -d
+

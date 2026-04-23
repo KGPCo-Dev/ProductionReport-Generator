@@ -1,0 +1,44 @@
+{% load socialaccount %}
+{% load django_bootstrap5 %}
+{% load static %}
+
+<DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KGPCo Portal{% endblock %}</title>
+
+    {% bootstrap_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Import BootStrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Import DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <!-- Import CSS file -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="login-page-background">
+    
+    <div class="login-main-container container-fluid">
+        <div>
+            <a class="navbar-brand d-flex align-items-center">
+                <img src="{% static 'img/logo.png' %}" alt="KGPCo Logo" width="200" height="100">
+            </a>
+        </div>
+
+        <div class="mt-5">
+            <h6>Ingresa tu correo corporativo</h6>
+            <a href="{% provider_login_url 'microsoft' %}">
+                <i></i> 
+                <span class="small fw-semibold">Iniciar Sesion con Microsoft</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

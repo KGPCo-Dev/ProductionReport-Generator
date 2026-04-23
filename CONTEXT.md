@@ -25,7 +25,7 @@ The goal is to build a **professional, scalable Django web application** that:
 - Generates **production reports**
 - Tracks **order status**
 - Uses a **Supabase-managed PostgreSQL database**
-- Is designed to be **AWS-ready** in future stages
+- Is designed to be **Azure-ready** in future stages
 - Displays **interactive dashboards** based on filtered data
 - Embeds **charts/graphs** in downloaded Excel files
 
@@ -84,5 +84,5 @@ Success criteria:
   - Keep it clean, readable, and production-ready
 - After providing code:
   - Explain the reasoning behind the solution
-  - Describe how it impacts scalability, maintainability, and future AWS deployment
+  - Describe how it impacts scalability, maintainability, and future Azure deployment
 
