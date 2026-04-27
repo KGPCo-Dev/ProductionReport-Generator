@@ -58,12 +58,12 @@
                             <li><h6 class="dropdown-header text-muted small">Cuentas corporativas</h6></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form mehtod="post" action="{% url 'account_logout' %}">
+                                <form id="logoutFormSecret" method="post" action="{% url 'account_logout' %}" style="display: none;">
                                     {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
-                                            <i class="bi bi-box-arrow-rigth"></i> Cerrar sesion
-                                        </button>
                                 </form>
+                                <button type="button" id="logoutConfirmBtn" class="dropdown-item text-danger d-flex align-items-center gap-2" style="background: none; border: none; width: 100%;">
+                                    <i class ="bi bi-box-arrow-right"></i>Cerrar Sesion
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -79,3 +79,6 @@
 
     </div>
 </div>
+
+<script src="{% static 'js/logout_confirm.js' %}">
+</script>
