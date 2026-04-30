@@ -4,6 +4,7 @@
     <div clas="d-flex align-items-center mb-4">
         <div class="accent-line me-3"></div>
         <h1 class="h3 mb-0 fw-bold">Detalles de Orden: <span class="text-primary">{{ build_id }}</span></h1>
+        <h2 class="h3 mb-0 fw-bold">Fecha de Entrega: <span class="text-primary">{{ planning_details.production_deliver_date }}</span></h2>
     </div>
 
     <div class="dashboard-grid">
@@ -74,7 +75,7 @@
             <div class="kpi-icon"><i class="bi bi-rulers"></i></div>
             <div class="kpi-content">
                 <span class="kpi-label">Longitud</span>
-                <span class="kpi-data">{{ order_details.cable_length }}</span>
+                <span class="kpi-data">{{ order_details.cable_length }} ft</span>
             </div>
         </div>
 

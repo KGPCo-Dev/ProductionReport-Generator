@@ -1,7 +1,9 @@
+from posixpath import split
 from django.shortcuts import render
+from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from reports.models import ProcessNames
-from reports.queries import get_order_details, get_fails_results, get_process_results, get_single_order_test2_results
+from reports.queries import get_order_details, get_fails_results, get_process_results, get_single_order_test2_results, get_order_planning_details
 from django.db.models import F
 
 @login_required
@@ -14,21 +16,29 @@ def order_tracker_view(request):
     order_progress = None
 
     if request.method == 'GET':
+        build_id = request.GET.get('search')
         if build_id:
+            build_id = build_id.strip()
 
-            order_details = get_order_details(build_id)
-            process_results = get_results(build_id)
-            test2_results = get_single_order_test2_results(build_id)
+            try:
+                order_details = get_order_details(build_id)
+                planning_details = clear_planning_results(build_id)
+                process_results = get_results(build_id)
+                test2_results = get_single_order_test2_results(build_id)
 
-            if order_details and process_results:
-                order_progress = get_tethers_status(order_details, process_results)
+                if order_details and process_results:
+                    order_progress = get_tethers_status(order_details, process_results)
 
+            except Exception as error_fatal:
+                print(f"Critical Error on DB: {error_fatal}")
+                order_details = None
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,
         'process_results': process_results,
         'test2_results': test2_results,
         'order_details': order_details,
+        'planning_details':planning_details,
         'order_progress': order_progress
      })
 
@@ -92,3 +102,18 @@ def get_tethers_status(order_details, process_results):
         get_tethers_status.append(tethers_data)
 
     return get_tethers_status
+
+def clear_planning_results(build_id):
+
+    try:
+        planning_details = get_order_planning_details(build_id)
+
+        planning_details.production_deliver_date = datetime.fromisoformat(
+            str(planning_details.production_deliver_date)
+        ).date()
+    
+    except Exception as e:
+        print("Planning_details value Error: ", e)
+        return []
+
+    return planning_details

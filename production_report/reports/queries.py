@@ -1,5 +1,6 @@
 from datetime import timedelta
-from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults
+from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders
+from core.utils.db_utils import clear_date
 from django.db.models import F
 import pandas as pd
 
@@ -45,6 +46,14 @@ def get_scrap_results(start_date, end_date):
     workplace__exact=''
   )
 
+def get_order_planning_details(build_id):
+  return KgpPlanningOrders.objects.filter(
+    build=build_id
+  ).only(
+    'priority', 
+    'production_deliver_date'
+  ).select_related('priority').first()
+
 def get_order_details(build_id):
   return KgpProductionOrders.objects.filter(
     build=build_id
@@ -61,8 +70,15 @@ def get_process_results(build_id):
   ).select_related('process').order_by('-entered_date')
 
 def get_scrap_report_data(start_date_str, end_date_str, shift=""):
-  start_date = pd.to_datetime(start_date_str) + timedelta(hours=7)
-  end_date = pd.to_datetime(end_date_str) + timedelta(days=1, hours=7)
+
+  start_date = clear_date(start_date_str)
+  end_date = clear_date(end_date_str)
+
+  if start_date is None or end_date is None:
+    return []
+  
+  start_date = start_date + timedelta(hours=7)
+  end_date = end_date + timedelta(days=1, hours=7)
 
   queryset = KgpTest2Results.objects.filter(
     entered_date__gte=start_date,
@@ -87,15 +103,22 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
       "Fecha de Incidencia": production_date.strftime('%Y-%m-%d'),
       "Tipo de Cable": row.build.cable_type if row.build else "-",
       "Empleado": row.employee_number if row.employee_number else "-",
-      "Estacion": row.workstation if row.workstation else "-",
+      "Estacion": row.workplace if row.workplace else "-",
        "Hora": row.production_hour if row.production_hour else "-",
-       "Turno": row.shift if row.shift else "0" 
+       "Turno": row.production_shift if row.production_shift else "0" 
     })
   return data
 
 def get_production_report_date(start_date_str, end_date_str, shift=""):
-  start_date = pd.to_datetime(start_date_str) + timedelta(hours=7)
-  end_date = pd.to_datetime(end_date_str) + timedelta(days=1, hours=7)
+
+  start_date = clear_date(start_date_str)
+  end_date = clear_date(end_date_str)
+
+  if start_date is None or end_date is None:
+    return []
+  
+  start_date = start_date + timedelta(hours=7)
+  end_date = end_date + timedelta(days=1, hours=7)
 
   queryset = KgpTest2Results.objects.filter(
     entered_date__gte=start_date,
@@ -127,8 +150,14 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
   return data
 
 def get_fibers_report_date(start_date_str, end_date_str, shift=""):
-  start_date = pd.to_datetime(start_date_str) + timedelta(hours=7)
-  end_date = pd.to_datetime(end_date_str) + timedelta(days=1, hours=7)
+  start_date = clear_date(start_date_str)
+  end_date = clear_date(end_date_str)
+
+  if start_date is None or end_date is None:
+    return []
+  
+  start_date = start_date + timedelta(hours=7)
+  end_date = end_date + timedelta(days=1, hours=7)
 
   queryset = KgpFinaltestResults.objects.filter(
     entered_date__gte=start_date,
@@ -162,6 +191,7 @@ def get_fibers_report_date(start_date_str, end_date_str, shift=""):
       "Estatus": "Terminado" if done_fibers >= row.build.fiber_count else "No Terminado" 
     })
   return data
+
 
 REPORT_CONFIG = { 
     'scrap_report': { 

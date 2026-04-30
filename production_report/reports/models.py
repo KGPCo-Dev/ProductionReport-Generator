@@ -14,52 +14,7 @@ class ProcessNames(models.TextChoices):
     SUB_ASSY = 'SUB_ASSY', 'Sub-Ensamble'
     CUT ='CUT', 'Corte'
 
-class AccountEmailaddress(models.Model):
-    email = models.CharField(unique=True, max_length=254)
-    verified = models.BooleanField()
-    primary = models.BooleanField()
-    user = models.ForeignKey('AuthUser', models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'account_emailaddress'
-        unique_together = (('user', 'email'), ('user', 'primary'),)
-
-
-class AccountEmailconfirmation(models.Model):
-    created = models.DateTimeField()
-    sent = models.DateTimeField(blank=True, null=True)
-    key = models.CharField(unique=True, max_length=64)
-    email_address = models.ForeignKey(AccountEmailaddress, models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'account_emailconfirmation'
-
-
-class AgentDocument(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    title = models.CharField(max_length=255)
-    uploaded_at = models.DateTimeField()
-    sharepoint = models.CharField(unique=True, max_length=255, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'agent_document'
-
-
-class AgentDocumentchunk(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    content = models.TextField()
-    embedding = models.TextField()  # This field type is a guess.
-    document = models.ForeignKey(AgentDocument, models.DO_NOTHING)
-    page_number = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'agent_documentchunk'
-
-
+#----  Django Tables ----#
 class AuthGroup(models.Model):
     name = models.CharField(unique=True, max_length=150)
 
@@ -192,81 +147,108 @@ class DjangoSite(models.Model):
         managed = False
         db_table = 'django_site'
 
+class AccountEmailaddress(models.Model):
+    email = models.CharField(unique=True, max_length=254)
+    verified = models.BooleanField()
+    primary = models.BooleanField()
+    user = models.ForeignKey('AuthUser', models.DO_NOTHING)
 
-class KgpCompletedOrders(models.Model):
+    class Meta:
+        managed = False
+        db_table = 'account_emailaddress'
+        unique_together = (('user', 'email'), ('user', 'primary'),)
+
+
+class AccountEmailconfirmation(models.Model):
+    created = models.DateTimeField()
+    sent = models.DateTimeField(blank=True, null=True)
+    key = models.CharField(unique=True, max_length=64)
+    email_address = models.ForeignKey(AccountEmailaddress, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'account_emailconfirmation'
+
+class SocialaccountSocialaccount(models.Model):
+    provider = models.CharField(max_length=200)
+    uid = models.CharField(max_length=191)
+    last_login = models.DateTimeField()
+    date_joined = models.DateTimeField()
+    extra_data = models.JSONField()
+    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'socialaccount_socialaccount'
+        unique_together = (('provider', 'uid'),)
+
+
+class SocialaccountSocialapp(models.Model):
+    provider = models.CharField(max_length=30)
+    name = models.CharField(max_length=40)
+    client = models.CharField(max_length=191)
+    secret = models.CharField(max_length=191)
+    key = models.CharField(max_length=191)
+    provider = models.CharField(max_length=200)
+    settings = models.JSONField()
+
+    class Meta:
+        managed = False
+        db_table = 'socialaccount_socialapp'
+
+
+class SocialaccountSocialappSites(models.Model):
     id = models.BigAutoField(primary_key=True)
-    build = models.TextField()
-    tethers_total = models.BigIntegerField(blank=True, null=True)
-    completed_date = models.DateTimeField(blank=True, null=True)
-    production_shift = models.IntegerField(blank=True, null=True)
-    cable_type = models.TextField(blank=True, null=True)
-    result_status = models.TextField(blank=True, null=True)
-    started_date = models.DateTimeField(blank=True, null=True)
-    workplace = models.TextField(blank=True, null=True)
-    line = models.TextField(blank=True, null=True)
+    socialapp = models.ForeignKey(SocialaccountSocialapp, models.DO_NOTHING)
+    site = models.ForeignKey(DjangoSite, models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'kgp_completed_orders'
-        db_table_comment = 'This table will get the orders that has been completed in final test'
+        db_table = 'socialaccount_socialapp_sites'
+        unique_together = (('socialapp', 'site'),)
 
 
-class KgpEmployees(models.Model):
-    employee = models.BigAutoField(primary_key=True)
-    employee_number = models.BigIntegerField(unique=True)
-    employee_name = models.TextField(blank=True, null=True)
-    shift = models.IntegerField()
-    supervisor = models.TextField(blank=True, null=True)
-    is_auditor = models.BooleanField(blank=True, null=True)
+class SocialaccountSocialtoken(models.Model):
+    token = models.TextField()
+    token_secret = models.TextField()
+    expires_at = models.DateTimeField(blank=True, null=True)
+    account = models.ForeignKey(SocialaccountSocialaccount, models.DO_NOTHING)
+    app = models.ForeignKey(SocialaccountSocialapp, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'kgp_employees'
+        db_table = 'socialaccount_socialtoken'
+        unique_together = (('app', 'account'),)
 
 
-class KgpFinaltestMetricsDaily(models.Model):
+#---- Agent Tables ----#
+class AgentDocument(models.Model):
     id = models.BigAutoField(primary_key=True)
-    workplace = models.TextField()
-    fibers_per_hour = models.TextField()
-    failed_fibers_count = models.BigIntegerField()
-    scrap_count = models.BigIntegerField()
-    shift = models.SmallIntegerField()
-    updated_date = models.DateTimeField()
+    title = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField()
+    sharepoint = models.CharField(unique=True, max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'kgp_finaltest_metrics_daily'
-        unique_together = (('workplace', 'shift'),)
+        db_table = 'agent_document'
 
 
-class KgpFinaltestResults(models.Model):
-    entered_date = models.DateTimeField()
-    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build')
-    employee_number = models.BigIntegerField(blank=True, null=True)
-    workplace = models.TextField(blank=True, null=True)
-    passed_fibers = models.BigIntegerField(blank=True, null=True)
-    failed_fibers = models.TextField(blank=True, null=True)
-    finished = models.BooleanField(blank=True, null=True)
-    scrap = models.BooleanField(blank=True, null=True)
-    updated_date = models.TextField(blank=True, null=True)
+class AgentDocumentchunk(models.Model):
     id = models.BigAutoField(primary_key=True)
-    production_hour = models.SmallIntegerField(blank=True, null=True)
-    production_shift = models.SmallIntegerField(blank=True, null=True)
-    scrap_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='scrap_auditor', to_field='employee_number', blank=True, null=True)
-    scrap_fk_value = models.ForeignKey('KgpScrapCodes', models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
-    fail = models.ForeignKey('KgpProcessFailCodes', models.DO_NOTHING, blank=True, null=True, db_column="fail_id")
-    hold_time_total = models.IntegerField(blank=True, null=True)
-    active_time_total = models.IntegerField(blank=True, null=True)
-    time_total = models.IntegerField(blank=True, null=True)
-    rework_auditor = models.IntegerField(blank=True, null=True)
+    content = models.TextField()
+    embedding = models.TextField()  # This field type is a guess.
+    document = models.ForeignKey(AgentDocument, models.DO_NOTHING)
+    page_number = models.IntegerField()
 
     class Meta:
         managed = False
-        db_table = 'kgp_finaltest_results'
+        db_table = 'agent_documentchunk'
 
+
+#---- LookUp Tables ----#
 
 class KgpOrdersStatus(models.Model):
-    status = models.AutoField(primary_key=True)
+    status = models.AutoField(primary_key=True, db_column='status_id')
     status_code = models.TextField(unique=True, blank=True, null=True)
     status_description = models.TextField(blank=True, null=True)
     internal_descrption = models.TextField(blank=True, null=True, db_comment='This section is to explain what every code is')
@@ -294,42 +276,28 @@ class KgpProcessFailCodes(models.Model):
         managed = False
         db_table = 'kgp_process_fail_codes'
 
-
-class KgpProductionOrderSetup(models.Model):
-    id = models.BigAutoField(primary_key=True)  # The composite primary key (id, build) found, that is not supported. The first column is selected.
-    updated_date = models.DateTimeField()
-    build = models.TextField(unique=True)
-    location_setup = models.TextField(blank=True, null=True)
-    tethers_registered = models.IntegerField(blank=True, null=True)
-    locations_registered = models.IntegerField(blank=True, null=True)
-    state = models.TextField(blank=True, null=True)
-    attempt_number = models.SmallIntegerField(blank=True, null=True)
+class KgpEmployees(models.Model):
+    employee = models.BigAutoField(primary_key=True)
+    employee_number = models.BigIntegerField(unique=True)
+    employee_name = models.TextField(blank=True, null=True)
+    shift = models.IntegerField()
+    supervisor = models.TextField(blank=True, null=True)
+    is_auditor = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'kgp_production_order_setup'
-        unique_together = (('id', 'build'),)
+        db_table = 'kgp_employees'
 
-
-class KgpProductionOrders(models.Model):
+class QualityAuditors(models.Model):
     id = models.BigAutoField(primary_key=True)
-    entered_date = models.DateTimeField()
-    build = models.TextField(unique=True, blank=True, null=True, db_column='build_id')
-    fiber_count = models.BigIntegerField(blank=True, null=True)
-    planned_fibers = models.BigIntegerField(blank=True, null=True)
-    spare_fibers = models.BigIntegerField(blank=True, null=True)
-    tethers = models.BigIntegerField(blank=True, null=True)
-    taps = models.BigIntegerField(blank=True, null=True)
-    cable_type = models.TextField(blank=True, null=True)
-    cable_length = models.BigIntegerField(blank=True, null=True)
-    order_type = models.TextField(blank=True, null=True)
-    installation_type = models.TextField(blank=True, null=True)
+    employee_number = models.OneToOneField(KgpEmployees, models.DO_NOTHING, db_column='employee_number')
+    employee_name = models.CharField(blank=True, null=True)
+    shift = models.BigIntegerField(blank=True, null=True)
+    supervisor = models.CharField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'kgp_production_orders'
-        db_table_comment = 'Any new orders added to the database'
-
+        db_table = 'quality_auditors'
 
 class KgpProductionProcess(models.Model):
     process = models.AutoField(primary_key=True, db_column='process_id')
@@ -348,38 +316,61 @@ class KgpProductionProcess(models.Model):
         managed = False
         db_table = 'kgp_production_process'
 
-
-class KgpProductionRework(models.Model):
+class TetherTypes(models.Model):
     id = models.BigAutoField(primary_key=True)
-    entered_date = models.DateTimeField()
-    build = models.TextField(blank=True, null=True)
-    workplace = models.SmallIntegerField(blank=True, null=True)
-    rework_auditor = models.IntegerField(blank=True, null=True)
-    shift = models.SmallIntegerField(blank=True, null=True)
-    employee_number = models.IntegerField(blank=True, null=True)
+    tether = models.TextField(blank=True, null=True)
+    tether_description = models.TextField(blank=True, null=True)
+    connector_type = models.TextField(blank=True, null=True)
+    order_type = models.TextField(blank=True, null=True)
+    installation_type = models.TextField(blank=True, null=True)
+    situation = models.TextField(blank=True, null=True)
+    tether_length = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'kgp_production_rework'
+        db_table = 'tether_types'
 
-
-class KgpProductionScrap(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    entered_date = models.DateTimeField()
-    build = models.TextField(blank=True, null=True)
-    workplace = models.SmallIntegerField(blank=True, null=True)
-    process = models.SmallIntegerField(blank=True, null=True)
-    employee_number = models.IntegerField(blank=True, null=True)
-    scrap_auditor = models.IntegerField(blank=True, null=True)
-    tap_number = models.SmallIntegerField(blank=True, null=True)
-    global_tether = models.SmallIntegerField(blank=True, null=True)
-    scrap = models.SmallIntegerField(blank=True, null=True)
-    shift = models.SmallIntegerField(blank=True, null=True)
+class KgpOrdersPriority(models.Model):
+    priority_id = models.BigAutoField(primary_key=True)
+    priority_code = models.TextField()
+    priority_english_name = models.TextField(blank=True, null=True)
+    priority_spanish_name = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'kgp_production_scrap'
+        db_table = 'kgp_orders_priority'
+        db_table_comment = 'Priority codes for planned orders'
 
+class KgpProductionMachines(models.Model):
+    machine_id = models.BigAutoField(primary_key=True)
+    machine_code = models.TextField()
+    machine_english_name = models.TextField(blank=True, null=True)
+    machine_spanish_name = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_production_machines'
+        db_table_comment = "Stores plant's cutting machines"
+
+class KgpCuttingWipAreas(models.Model):
+    cutting_wip_id = models.BigAutoField(primary_key=True)
+    cutting_wip_code = models.TextField(blank=True, null=True)
+    internal_description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_cutting_wip_areas'
+        db_table_comment = 'Stores cutting areas. Once and order has been cuted, it will be located into one of this, waiting for a handler to set it up on a production line.'
+
+class KgpFinaltestWipAreas(models.Model):
+    finaltest_wip_id = models.BigAutoField(primary_key=True)
+    creatfinaltest_wip_codeed_at = models.TextField()
+    internal_description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_finaltest_wip_areas'
+        db_table_comment = 'Stores final test/packaging wip codes. Once final test has been done, order will be assigned to one of this areas.'
 
 class KgpProductionWorkstations(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -417,6 +408,131 @@ class KgpScrapCodes(models.Model):
     class Meta:
         managed = False
         db_table = 'kgp_scrap_codes'
+
+#---- Produciton Tables ----#
+class KgpProductionOrders(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    entered_date = models.DateTimeField()
+    build = models.TextField(unique=True, blank=True, null=True, db_column='build_id')
+    fiber_count = models.BigIntegerField(blank=True, null=True)
+    planned_fibers = models.BigIntegerField(blank=True, null=True)
+    spare_fibers = models.BigIntegerField(blank=True, null=True)
+    tethers = models.BigIntegerField(blank=True, null=True)
+    taps = models.BigIntegerField(blank=True, null=True)
+    cable_type = models.TextField(blank=True, null=True)
+    cable_length = models.BigIntegerField(blank=True, null=True)
+    order_type = models.TextField(blank=True, null=True)
+    installation_type = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_production_orders'
+        db_table_comment = 'Any new orders added to the database'
+
+class KgpCompletedOrders(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    build = models.TextField()
+    tethers_total = models.BigIntegerField(blank=True, null=True)
+    completed_date = models.DateTimeField(blank=True, null=True)
+    production_shift = models.IntegerField(blank=True, null=True)
+    cable_type = models.TextField(blank=True, null=True)
+    result_status = models.TextField(blank=True, null=True)
+    started_date = models.DateTimeField(blank=True, null=True)
+    workplace = models.TextField(blank=True, null=True)
+    line = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_completed_orders'
+        db_table_comment = 'This table will get the orders that has been completed in final test'
+
+
+class KgpFinaltestMetricsDaily(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    workplace = models.TextField()
+    fibers_per_hour = models.TextField()
+    failed_fibers_count = models.BigIntegerField()
+    scrap_count = models.BigIntegerField()
+    shift = models.SmallIntegerField()
+    updated_date = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_finaltest_metrics_daily'
+        unique_together = (('workplace', 'shift'),)
+
+
+class KgpFinaltestResults(models.Model):
+    entered_date = models.DateTimeField()
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build', db_column='build_id')
+    employee_number = models.BigIntegerField(blank=True, null=True)
+    workplace = models.TextField(blank=True, null=True)
+    passed_fibers = models.BigIntegerField(blank=True, null=True)
+    failed_fibers = models.TextField(blank=True, null=True)
+    finished = models.BooleanField(blank=True, null=True)
+    scrap = models.BooleanField(blank=True, null=True)
+    updated_date = models.TextField(blank=True, null=True)
+    id = models.BigAutoField(primary_key=True)
+    production_hour = models.SmallIntegerField(blank=True, null=True)
+    production_shift = models.SmallIntegerField(blank=True, null=True)
+    scrap_auditor = models.ForeignKey('QualityAuditors', models.DO_NOTHING, db_column='scrap_auditor', to_field='employee_number', blank=True, null=True)
+    scrap_fk_value = models.ForeignKey('KgpScrapCodes', models.DO_NOTHING, db_column='scrap_id', blank=True, null=True)  # Field renamed because of name conflict.
+    fail = models.ForeignKey('KgpProcessFailCodes', models.DO_NOTHING, blank=True, null=True, db_column="fail_id")
+    hold_time_total = models.IntegerField(blank=True, null=True)
+    active_time_total = models.IntegerField(blank=True, null=True)
+    time_total = models.IntegerField(blank=True, null=True)
+    rework_auditor = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_finaltest_results'
+
+
+class KgpProductionOrderSetup(models.Model):
+    id = models.BigAutoField(primary_key=True)  # The composite primary key (id, build) found, that is not supported. The first column is selected.
+    updated_date = models.DateTimeField()
+    build = models.TextField(unique=True)
+    location_setup = models.TextField(blank=True, null=True)
+    tethers_registered = models.IntegerField(blank=True, null=True)
+    locations_registered = models.IntegerField(blank=True, null=True)
+    state = models.TextField(blank=True, null=True)
+    attempt_number = models.SmallIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_production_order_setup'
+        unique_together = (('id', 'build'),)
+
+class KgpProductionRework(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    entered_date = models.DateTimeField()
+    build = models.TextField(blank=True, null=True)
+    workplace = models.SmallIntegerField(blank=True, null=True)
+    rework_auditor = models.IntegerField(blank=True, null=True)
+    shift = models.SmallIntegerField(blank=True, null=True)
+    employee_number = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_production_rework'
+
+
+class KgpProductionScrap(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    entered_date = models.DateTimeField()
+    build = models.TextField(blank=True, null=True)
+    workplace = models.SmallIntegerField(blank=True, null=True)
+    process = models.SmallIntegerField(blank=True, null=True)
+    employee_number = models.IntegerField(blank=True, null=True)
+    scrap_auditor = models.IntegerField(blank=True, null=True)
+    tap_number = models.SmallIntegerField(blank=True, null=True)
+    global_tether = models.SmallIntegerField(blank=True, null=True)
+    scrap = models.SmallIntegerField(blank=True, null=True)
+    shift = models.SmallIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_production_scrap'
 
 
 class KgpSubensambleResults(models.Model):
@@ -540,80 +656,67 @@ class KpgProductionProcessResults(models.Model):
         db_table = 'kpg_production_process_results'
 
 
-class QualityAuditors(models.Model):
+class KgpFinaltestWipResults(models.Model):
     id = models.BigAutoField(primary_key=True)
-    employee_number = models.OneToOneField(KgpEmployees, models.DO_NOTHING, db_column='employee_number')
-    employee_name = models.CharField(blank=True, null=True)
-    shift = models.BigIntegerField(blank=True, null=True)
-    supervisor = models.CharField(blank=True, null=True)
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id')
+    entered_date = models.DateTimeField(blank=True, null=True)
+    employee_number = models.TextField(blank=True, null=True)
+    status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True, db_column='status_id')
+    was_packaged = models.BooleanField(blank=True, null=True)
+    finaltest_wip_area = models.ForeignKey('KgpFinaltestWipAreas', models.DO_NOTHING, db_column='finaltest_wip_area', blank=True, null=True)
+    production_shift = models.BigIntegerField(blank=True, null=True)
+    production_cell = models.BigIntegerField(blank=True, null=True)
+    production_table = models.TextField(blank=True, null=True)
+    reel_id = models.TextField(blank=True, null=True, db_column='reel_id')
+    carret_size = models.FloatField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'quality_auditors'
+        db_table = 'kgp_finaltest_wip_results'
+        db_table_comment = 'Stores if and order was or not packaged.'
 
-
-class SocialaccountSocialaccount(models.Model):
-    provider = models.CharField(max_length=200)
-    uid = models.CharField(max_length=191)
-    last_login = models.DateTimeField()
-    date_joined = models.DateTimeField()
-    extra_data = models.JSONField()
-    user = models.ForeignKey(AuthUser, models.DO_NOTHING)
-
-    class Meta:
-        managed = False
-        db_table = 'socialaccount_socialaccount'
-        unique_together = (('provider', 'uid'),)
-
-
-class SocialaccountSocialapp(models.Model):
-    provider = models.CharField(max_length=30)
-    name = models.CharField(max_length=40)
-    client = models.CharField(max_length=191)
-    secret = models.CharField(max_length=191)
-    key = models.CharField(max_length=191)
-    provider = models.CharField(max_length=200)
-    settings = models.JSONField()
-
-    class Meta:
-        managed = False
-        db_table = 'socialaccount_socialapp'
-
-
-class SocialaccountSocialappSites(models.Model):
+class KgpSubassembleKitResults(models.Model):
     id = models.BigAutoField(primary_key=True)
-    socialapp = models.ForeignKey(SocialaccountSocialapp, models.DO_NOTHING)
-    site = models.ForeignKey(DjangoSite, models.DO_NOTHING)
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id')
+    entered_date = models.DateTimeField(blank=True, null=True)
+    employee_number = models.TextField(blank=True, null=True)
+    cable_type = models.TextField(blank=True, null=True)
+    status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True, db_column='status_id')
+    registered_tethers = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'socialaccount_socialapp_sites'
-        unique_together = (('socialapp', 'site'),)
+        db_table = 'kgp_subassemble_kit_results'
+        db_table_comment = "Stores order's status on sub-assemble. produices_tethers should be equals to production_orders.tethers in order to set as completed"
 
 
-class SocialaccountSocialtoken(models.Model):
-    token = models.TextField()
-    token_secret = models.TextField()
-    expires_at = models.DateTimeField(blank=True, null=True)
-    account = models.ForeignKey(SocialaccountSocialaccount, models.DO_NOTHING)
-    app = models.ForeignKey(SocialaccountSocialapp, models.DO_NOTHING, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'socialaccount_socialtoken'
-        unique_together = (('app', 'account'),)
-
-
-class TetherTypes(models.Model):
+class KgpCuttingResults(models.Model):
     id = models.BigAutoField(primary_key=True)
-    tether = models.TextField(blank=True, null=True)
-    tether_description = models.TextField(blank=True, null=True)
-    connector_type = models.TextField(blank=True, null=True)
-    order_type = models.TextField(blank=True, null=True)
-    installation_type = models.TextField(blank=True, null=True)
-    situation = models.TextField(blank=True, null=True)
-    tether_length = models.TextField(blank=True, null=True)
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id')
+    entered_date = models.DateTimeField(blank=True, null=True)
+    employee_number = models.TextField(blank=True, null=True)
+    machine = models.ForeignKey('KgpProductionMachines', models.DO_NOTHING, blank=True, null=True, db_column='machine_id')
+    master_reel = models.TextField(blank=True, null=True)
+    status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True, db_column='status_id')
+    carret_type = models.TextField(blank=True, null=True)
+    production_cell = models.BigIntegerField(blank=True, null=True)
+    finished = models.BooleanField(blank=True, null=True)
+    scrap = models.BooleanField(blank=True, null=True)
+    cutting_wip_area = models.ForeignKey('KgpCuttingWipAreas', models.DO_NOTHING, db_column='cutting_wip_area', blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'tether_types'
+        db_table = 'kgp_cutting_results'
+        db_table_comment = 'Stores cutting machines set up'
+
+class KgpPlanningOrders(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id', to_field='build')
+    priority = models.ForeignKey('KgpOrdersPriority', models.DO_NOTHING, blank=True, null=True, db_column='priority_id')
+    original_deliver_date = models.DateTimeField(blank=True, null=True)
+    production_deliver_date = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_planning_orders'
+

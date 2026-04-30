@@ -6,9 +6,7 @@
                 <thead class="text-white">
                     <tr>
                         {% for header in results.1 %}
-                            {% if not forloop.first %}
                                 <th class="py-3 px-4">{{ header }}</th>
-                            {% endif %}
                         {% endfor %}
                     </tr>
                 </thead>
@@ -19,11 +17,9 @@
                         {% for row in results.0|slice:":200" %}
                         <tr>
                             {% for value in row.values %}
-                                {% if not forloop.first %}
                                     <td class="px-4 py-3">
                                         {{ value|default:"-" }}
                                     </td>
-                                {% endif %}
                             {% endfor %}
                         </tr>
                         {% empty %}

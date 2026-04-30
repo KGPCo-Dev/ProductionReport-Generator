@@ -7,6 +7,7 @@ from django.utils import timezone
 import pandas as pd
 import json
 
+#---- @login_required is needed in order to validate if user is logedin on Wab Page ----#
 @login_required
 def production_report_view(request):
     results = None
@@ -92,9 +93,9 @@ def production_report_view(request):
             if headers:
                 production_results = [results, headers]
 
+
     return render(request, 'reports/report_preview.html', { 
         'results': results,
-        'headers': headers,
         'start_date': start_date,
         'production_results': production_results,
         'end_date': end_date,
