@@ -124,10 +124,14 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
     entered_date__gte=start_date,
     entered_date__lt=end_date,
   ).exclude(
-    workplace__isnull=True,
-    workplace__exact="",
+    workplace__isnull=True
+  ).exclude(
+    workplace__exact=""
+  ).exclude(
+    production_cell__isnull=True
+  ).exclude(
     result_status='Rework'
-  ).select_related('build')
+  ).select_related('build').order_by('-entered_date')
 
   if shift in ['1', '2']:
     queryset = queryset.filter(production_shift=int(shift))
@@ -145,6 +149,7 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
       "Tipo de Cable": row.build.cable_type if row.build else "-",
       "Empleado": row.employee_number if row.employee_number else "-" ,
       "Estacion":row.workplace if row.workplace else "-",
+      "Celda": row.production_cell if row.production_cell else "-",
       "Turno": row.production_shift if row.production_shift else "-"
     })
   return data

@@ -13,8 +13,8 @@ document.getElementById('logoutConfirmBtn').addEventListener('click', function()
         confirmButtonText:`Cerrar Sesion`,
         cancelButtonText: `Cancelar`,
         customClass: {
-            cancelButton: 'logout-cancel-button',
-            confirmButton: 'log-out-confirm-button'
+            cancelButton: 'kgp-cancel-button',
+            confirmButton: 'kgp-confirm-button'
 
         }
     }).then((result) => {

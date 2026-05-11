@@ -1,3 +1,6 @@
+from hashlib import new
+from distutils.command.build import build
+import json
 from posixpath import split
 from django.shortcuts import render
 from datetime import datetime
@@ -5,6 +8,9 @@ from django.contrib.auth.decorators import login_required
 from reports.models import ProcessNames
 from reports.queries import get_order_details, get_fails_results, get_process_results, get_single_order_test2_results, get_order_planning_details
 from django.db.models import F
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from reports.models import KgpPlanningOrders
 
 @login_required
 def order_tracker_view(request):
@@ -18,7 +24,7 @@ def order_tracker_view(request):
     if request.method == 'GET':
         build_id = request.GET.get('search')
         if build_id:
-            build_id = build_id.strip()
+            build_id = build_id.strip().upper()
 
             try:
                 order_details = get_order_details(build_id)
@@ -117,3 +123,28 @@ def clear_planning_results(build_id):
         return []
 
     return planning_details
+
+@login_required
+@require_POST
+def update_delivery_date(request):
+
+    if not (request.user.is_superuser or request.user.groups.filter(name='Planning').exists()):
+        return JsonResponse({'success': False, 'error': 'Need permission'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        build_id = data.get('build_id')
+        new_date_str = data.get('new_date')
+
+        new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+
+        planning_order = KgpPlanningOrders.objects.filter(
+            build_id=build_id
+        ).first()
+
+        planning_order.production_deliver_date = new_date
+        planning_order.save()
+
+        return JsonResponse({'success': True, 'message': 'Date updated'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Server Error'}, status=500)

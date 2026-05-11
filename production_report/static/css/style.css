@@ -4,6 +4,9 @@
    --kgp-blue-dark: #003d80;
    --kgp-blue-accent: #007bff;
 
+   --pass-green: #7aee81;
+   --fail-red: #ef3636;
+
    --kgp-light: #f8f9fa;
    --text-primary: #333;
 
@@ -79,16 +82,20 @@ body {
    color: var(--kgp-blue);
 }
 
-.logout-cancel-button {
-   background-color: red;
-}
-
-.log-out-confirm-button {
+.kgp-cancel-button {
    background-color: rgb(189, 189, 189);
 }
 
-.log-out-confirm-button:hover {
+.kgp-confirm-button {
+   background-color: rgb(189, 189, 189);
+}
+
+.kgp-confirm-button:hover {
    background-color: var(--kgp-blue);
+}
+
+.kgp-cancel-button:hover {
+   background-color: var(--fail-red);
 }
 /*NavBar Customization */
 

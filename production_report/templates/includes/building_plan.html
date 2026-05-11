@@ -1,13 +1,42 @@
 {% load static %}
+{% load auth_extras %}
+
 <div class="container-fluid py-4">
 
-    <div clas="d-flex align-items-center mb-4">
-        <div class="accent-line me-3"></div>
-        <h1 class="h3 mb-0 fw-bold">Detalles de Orden: <span class="text-primary">{{ build_id }}</span></h1>
-        <h2 class="h3 mb-0 fw-bold">Fecha de Entrega: <span class="text-primary">{{ planning_details.production_deliver_date }}</span></h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <div class="accent-line me-3"></div>
+            <h1 class="h3 mb-0 fw-bold">Detalles de Orden: <span class="text-primary" id="current_build_id"> {{ build_id }}</span></h1>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <div class="badge bg-white text-dark border px-3 py-2 rounded-pill fs-6 fw-normal shadow-sm d-flex align-items-center">
+                <i class="bi bi-exclamation-circle-fill text-primary me-2"></i>
+                <span class="text-muted me-1">Prioridad:</span>
+                <span class="fw-bold">{{ planning_details.priority.priority_spanish_name }}</span>
+            </div>
+
+            <div class="badge bg-white text-dark border px-3 py-2 rounded-pill fs-6 fw-normal shadow-sm d-flex align-items-center">
+                <i class="bi bi-calendar-fill text-primary me-2"></i>
+                <span class="text-muted me-1">Entrega:</span>
+                <span class="fw-bold text-primary" id="display_delivery_date">
+                    {{ planning_details.production_deliver_date }}
+                </span>
+            </div>
+            {% if request.user|has_group:"Planning" %}
+            <div class="badge bg-white text-dark border px-3 py-0 rounded-pill fs-6 fw-normal shadow-sm d-flex align-items-center">
+                <button class="btn btn-sm btn-link p-0 ms-2 text-primary" 
+                        onclick="editDeliveryDate('{% url 'order_tracker:update_delivery_date' %}')" 
+                        data-bs-toggle="tooltip" 
+                        title="Editar Fecha">
+                    <i class="bi bi-pen-fill fs-5"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="dashboard-grid">
+    <div class="dashboard-grid mt-2">
 
         <div class="kpi-group-vertical">
 

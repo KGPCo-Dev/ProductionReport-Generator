@@ -1,14 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Inicio - KGPCo{% endblock %}
 
 {% block extra_js %}
   {% include "includes/table_loader_script.html" %}
+  <script src="{% static 'js/get_cookie.js' %}"></script>
+  <script src="{% static 'js/edit_delivery_date.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 
   {% if build_id %}
-
+  <div>
     <div id="building_plan">
       {% include "includes/building_plan.html" with order_details=order_details build_id=build_id planning_details=planning_details%}
     </div>
@@ -101,7 +104,7 @@
         No hay escaneos de tethers de la orden: <strong>{{ build_id }}</strong>
       </div>
     {% endif %}
-
+  </div>
   {% else %}
   <div class="hero-card">
     <hi class="hero-title">Consulta estatus de orden</hi1>
