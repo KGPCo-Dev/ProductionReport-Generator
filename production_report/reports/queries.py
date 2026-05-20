@@ -1,5 +1,5 @@
 from datetime import timedelta
-from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders
+from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines
 from core.utils.db_utils import clear_date
 from django.db.models import F
 import pandas as pd
@@ -45,6 +45,9 @@ def get_scrap_results(start_date, end_date):
   ).exclude(
     workplace__exact=''
   )
+
+def get_cutting_machines():
+  return KgpCuttingMachines.objects.all().order_by('machine_id')
 
 def get_order_planning_details(build_id):
   return KgpPlanningOrders.objects.filter(

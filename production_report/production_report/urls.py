@@ -9,6 +9,7 @@ urlpatterns = [
     path('', include('home.urls')),
     path('production-report/', include('reports.urls')),
     path('order-tracker/', include('order_tracker.urls')),
+    path('cutting-machine-assignation/', include('cutting_machine_assignation.urls')),
     path('api-token-auth/', dfr_views.obtain_auth_token),
     #path('api/data/<str:table_name>/', TableAPI.as_view(), name='api_all_data'),
     path('accounts/', include('allauth.urls')),

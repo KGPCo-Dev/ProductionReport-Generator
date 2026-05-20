@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Inicio - KGPCo{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>Selecciona una maquina</h1>
+        <select name="cutting_machines" id="cutting_machines">
+            {% for machine in cutting_machines %}
+                <option value="{{ machine }}">{{ machine }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <h1>Busca orden por agregar</h1>
+
+        <form class="order-search-bar d-none d-lg-flex align-items-center" id="search-order-form">
+            <i class="bi bi-search ms-3"></i>
+            <input type="text" id="search-input" name="search" placeholder="No.Order (Build ID)" required>
+            <button type="submit" class="btn btn-sm-primary ms-2">Buscar</button>
+        </form>
+    </div>
+
+    <div id="search-result-container" class="mt-4 p-3 border rounded bg-light" style="display:none;">
+        <h3>Orden Encontrada: <span id="current-build-id"></span></h3>
+        <span class="kpi-label fw-bold">Tipo de Cable</span>
+        <span class="kpi-data" id="current-cable-type"></span>
+
+        <br>
+
+        <button type="button" id="btn-add-order" class="btn btn-primary mt-3">
+            <i class="bi bi-plus-circle"></i> Agregar a la lista
+        </button>
+    </div>
+
+    <div id="pending-orders-section" style="display: none;">
+        <h3>Ordenes por asignar</h3>
+        <table class="table table-striped mt-3" id="pending-orders-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>Prioridad</th>
+                    <th>No.Orden</th>
+                    <th>Tipo de Cable</th>
+                    <th>Maquina</th>
+                </tr>
+            </thead>
+            
+            <tbody id="pending-orders-body">
+
+            </tbody>
+        </table>
+
+        <button type="button" id="btn-confirm-assignation" class="btn btn-success mt-3">
+            <i class="bi bi-check-circle"></i> Confirmar Asignacion
+        </button>
+    </div>
+
+    <script src="{% static 'js/assign_machine.js' %}" defer></script>
+{% endblock %}

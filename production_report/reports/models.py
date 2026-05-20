@@ -341,7 +341,7 @@ class KgpOrdersPriority(models.Model):
         db_table = 'kgp_orders_priority'
         db_table_comment = 'Priority codes for planned orders'
 
-class KgpProductionMachines(models.Model):
+class KgpCuttingMachines(models.Model):
     machine_id = models.BigAutoField(primary_key=True)
     machine_code = models.TextField()
     machine_english_name = models.TextField(blank=True, null=True)
@@ -349,7 +349,7 @@ class KgpProductionMachines(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'kgp_production_machines'
+        db_table = 'kgp_cutting_machines'
         db_table_comment = "Stores plant's cutting machines"
 
 class KgpCuttingWipAreas(models.Model):
@@ -692,17 +692,17 @@ class KgpSubassembleKitResults(models.Model):
 
 class KgpCuttingResults(models.Model):
     id = models.BigAutoField(primary_key=True)
-    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id')
+    build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build', db_column='build_id')
     entered_date = models.DateTimeField(blank=True, null=True)
     employee_number = models.TextField(blank=True, null=True)
-    machine = models.ForeignKey('KgpProductionMachines', models.DO_NOTHING, blank=True, null=True, db_column='machine_id')
+    machine = models.ForeignKey('KgpCuttingMachines', models.DO_NOTHING, blank=True, null=True)
     master_reel = models.TextField(blank=True, null=True)
-    status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True, db_column='status_id')
-    carret_type = models.TextField(blank=True, null=True)
-    production_cell = models.BigIntegerField(blank=True, null=True)
-    finished = models.BooleanField(blank=True, null=True)
+    status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True)
     scrap = models.BooleanField(blank=True, null=True)
     cutting_wip_area = models.ForeignKey('KgpCuttingWipAreas', models.DO_NOTHING, db_column='cutting_wip_area', blank=True, null=True)
+    stack_id = models.SmallIntegerField(blank=True, null=True, db_column='stack_id')
+    production_shift = models.SmallIntegerField(blank=True, null=True)
+    completed_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False

@@ -28,6 +28,8 @@ The goal is to build a **professional, scalable Django web application** that:
 - Is designed to be **Azure-ready** in future stages
 - Displays **interactive dashboards** based on filtered data
 - Embeds **charts/graphs** in downloaded Excel files
+- Assign orders to cutting machines
+- Microsoft auth integration
 
 Success criteria:
 - Clean architecture
@@ -71,9 +73,7 @@ Success criteria:
 ---
 
 ## Next Steps
-- Implement a chatbot
-- Displays stadistics on home page
-- Implement a pipeline
+- Implement machine asignation from planned orders
 ---
 
 ## Answer & Interaction Guidelines

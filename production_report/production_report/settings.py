@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'reports',
     'home',
     'order_tracker',
+    'cutting_machine_assignation',
     'rest_framework',
     'rest_framework.authtoken',
     'agent',
