@@ -3,46 +3,141 @@
 {% block title %} Inicio - KGPCo{% endblock %}
 
 {% block content %}
-    <div>
-        <h1>Selecciona una maquina</h1>
-        <select name="cutting_machines" id="cutting_machines">
+
+    {% csrf_token %}
+
+    <div class="hero-card mt-4 p-4 text-start" style="margin-bottom: 0.8rem !important;">
+        <!-- Encabezado de Selección de Máquina -->
+        <div class="d-flex align-items-center mb-3">
+            <span class="badge rounded-circle d-flex align-items-center justify-content-center me-2 text-white" 
+                  style="width: 28px; height: 28px; font-weight: bold; background-color: var(--kgp-blue) !important; font-size: 0.9rem;">
+                1
+            </span>
+            <div>
+                <h5 class="m-0 fw-bold" style="color: var(--kgp-blue-dark) !important; font-size: 1.15rem;">Selección de Máquina</h5>
+                <p class="text-muted small mb-0" style="font-size: 0.8rem;">Define el equipo activo para la cola de producción</p>
+            </div>
+        </div>
+
+        <!-- Input Oculto para conservar el valor seleccionado -->
+        <input type="hidden" name="cutting_machines" id="cutting_machines" value="{{ cutting_machines.0.machine_spanish_name }}">
+
+        <!-- Contenedor Flex de Tarjetas de Máquinas -->
+        <div class="d-flex justify-content-center flex-wrap gap-3 mt-2">
             {% for machine in cutting_machines %}
-                <option value="{{ machine }}">{{ machine }}</option>
+                <div class="machine-card text-start {% if forloop.first %}active{% endif %}" 
+                     data-machine-code="{{ machine.machine_spanish_name }}" 
+                     onclick="selectMachine(this)">
+                    
+                    <!-- Estatus -->
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="status-text fw-bold text-uppercase">
+                            {% if forloop.first %}ESTATUS: SELECCIONADA{% else %}ESTATUS: SIN SELECCIONAR{% endif %}
+                        </span>
+                        <span class="status-dot rounded-circle" 
+                              style="background-color: {% if forloop.first %}#10b981{% else %}#94a3b8{% endif %}; transition: background-color 0.3s;"></span>
+                    </div>
+                    
+                    <!-- Nombre del equipo -->
+                    <h4 class="machine-title fw-bold m-0 mb-1">{{ machine.machine_spanish_name }}</h4>
+                    
+                    <!-- Descripción Auxiliar -->
+                    <p class="text-muted small mb-0 description-text">
+                        Ordenes Asignadas: {{ machine.assigned_orders_count }}
+                    </p>
+                </div>
             {% endfor %}
-        </select>
+        </div>
     </div>
 
-    <div>
-        <h1>Busca orden por agregar</h1>
+    <div class="row justify-content-center align-items-stretch g-3 mt-1 mb-4">
+        <!-- Tarjeta de Búsqueda (Siempre Visible) -->
+        <div class="col-md-4">
+            <div class="card p-3 rounded-4 shadow-sm border h-100 bg-white" style="max-width: 360px; margin: 0 auto;">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge rounded-circle d-flex align-items-center justify-content-center me-2 text-white" 
+                          style="width: 28px; height: 28px; font-weight: bold; background-color: var(--kgp-blue) !important; font-size: 0.9rem;">
+                        2
+                    </span>
+                    <h5 class="m-0 fw-bold" style="color: var(--kgp-blue-dark) !important; font-size: 1.15rem;">Ingresar Orden</h5>
+                </div>
+                
+                <form id="search-order-form">
+                    <div class="text-start mb-2">
+                        <label for="search-input" class="kpi-label mb-2 d-block text-uppercase fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">Build ID / No. Orden</label>
+                        <div class="input-group border rounded shadow-sm overflow-hidden" style="border-color: #ced4da !important;">
+                            <input type="text" id="search-input" name="search" class="form-control border-0 px-3" placeholder="No. Orden (Build ID)" autocomplete="off" required style="box-shadow: none; height: 40px; font-size: 0.9rem;">
+                            <button class="btn btn-primary px-3 border-0 d-flex align-items-center justify-content-center" type="submit" style="background-color: var(--kgp-blue) !important; width: 48px;">
+                                <i class="bi bi-search fs-6 text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <p class="text-muted small text-start mt-2 lh-sm mb-0" style="font-size: 0.72rem;">
+                    Escanee el código de barras para localizar los parámetros de la orden.
+                </p>
+            </div>
+        </div>
 
-        <form class="order-search-bar d-none d-lg-flex align-items-center" id="search-order-form">
-            <i class="bi bi-search ms-3"></i>
-            <input type="text" id="search-input" name="search" placeholder="No.Order (Build ID)" required>
-            <button type="submit" class="btn btn-sm-primary ms-2">Buscar</button>
-        </form>
+        <!-- Tarjeta de Resultado (Se muestra al encontrar la orden) -->
+        <div class="col-md-5" id="search-result-container" style="display: none;">
+            <div class="card p-3 rounded-4 shadow-sm border h-100 bg-white d-flex flex-column justify-content-between" style="max-width: 440px; margin: 0 auto;">
+                <div>
+                    <!-- Fila Superior: Badge + Build ID -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge px-3 py-2 rounded-pill fw-bold" 
+                              style="font-size: 0.7rem; background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
+                            ORDEN ENCONTRADA
+                        </span>
+                        <h4 class="m-0 fw-bold" id="current-build-id" style="color: var(--kgp-blue-dark) !important; font-size: 1.3rem;"></h4>
+                    </div>
+
+                    <!-- Columnas de Datos: Tipo de Cable y Longitud -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 text-start">
+                            <span class="kpi-label d-block text-uppercase fw-bold text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Tipo de Cable</span>
+                            <div class="bg-light p-2 rounded-3 border border-light-subtle">
+                                <span class="fw-bold fs-6 text-dark" id="current-cable-type" style="color: #334155 !important; font-size: 0.88rem !important;"></span>
+                            </div>
+                        </div>
+                        <div class="col-6 text-start">
+                            <span class="kpi-label d-block text-uppercase fw-bold text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">Longitud</span>
+                            <div class="bg-light p-2 rounded-3 border border-light-subtle">
+                                <span class="fw-bold fs-6 text-dark" id="current-cable-length" style="color: #334155 !important; font-size: 0.88rem !important;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asignación del Master Reel -->
+                    <div class="text-start mb-3">
+                        <label for="master-reel-input" class="kpi-label d-block mb-1.5 text-uppercase fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">Master Reel Asignado</label>
+                        <input type="text" id="master-reel-input" class="form-control border-secondary-subtle py-2 px-3 rounded-3" placeholder="Ej: MR-12345" autocomplete="off" style="border: 1px solid #cbd5e1 !important; height: 40px; font-size: 0.9rem;">
+                    </div>
+                </div>
+
+                <!-- Botón Agregar a Fila -->
+                <div class="text-end mt-2">
+                    <button type="button" id="btn-add-order" class="btn btn-primary rounded-3 fw-bold px-3 py-2 d-inline-flex align-items-center justify-content-center shadow-sm" style="background-color: var(--kgp-blue) !important; font-size: 0.95rem; border-color: var(--kgp-blue) !important; height: 40px; border-radius: 10px !important;">
+                        <i class="bi bi-plus-lg me-2"></i> Agregar a Fila
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="search-result-container" class="mt-4 p-3 border rounded bg-light" style="display:none;">
-        <h3>Orden Encontrada: <span id="current-build-id"></span></h3>
-        <span class="kpi-label fw-bold">Tipo de Cable</span>
-        <span class="kpi-data" id="current-cable-type"></span>
-
-        <br>
-
-        <button type="button" id="btn-add-order" class="btn btn-primary mt-3">
-            <i class="bi bi-plus-circle"></i> Agregar a la lista
-        </button>
-    </div>
-
-    <div id="pending-orders-section" style="display: none;">
-        <h3>Ordenes por asignar</h3>
-        <table class="table table-striped mt-3" id="pending-orders-table">
-            <thead class="table-dark">
+    <div id="pending-orders-section" class="hero-card mt-5" style="display: none;">
+        <h3 class="hero-title text-start mb-4">Órdenes por Asignar</h3>
+        <div class="table-responsive rounded shadow-sm">
+            <table class="table table-custom table-hover align-middle mb-0" id="pending-orders-table">
+                <thead>
                 <tr>
+                    <th>No. en Fila</th>
                     <th>Prioridad</th>
                     <th>No.Orden</th>
-                    <th>Tipo de Cable</th>
-                    <th>Maquina</th>
+                    <th>Longitud</th>
+                    <th>Tethers</th>
+                    <th>Master Reel</th>
                 </tr>
             </thead>
             
@@ -50,11 +145,63 @@
 
             </tbody>
         </table>
+        </div>
 
-        <button type="button" id="btn-confirm-assignation" class="btn btn-success mt-3">
-            <i class="bi bi-check-circle"></i> Confirmar Asignacion
-        </button>
+        <div class="text-end mt-4">
+            <button type="button" id="btn-confirm-assignation" class="btn btn-success border-0 px-4 py-2.5 fw-semibold shadow-sm" style="background-color: #10b981 !important; border-radius: 12px !important; font-size: 0.95rem;">
+                <i class="bi bi-check2-circle me-1.5 fs-6"></i> Confirmar Asignación
+            </button>
+        </div>
     </div>
 
     <script src="{% static 'js/assign_machine.js' %}" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <script>
+        function selectMachine(card) {
+            const isActive = card.classList.contains('active');
+            const siblingCards = Array.from(document.querySelectorAll('.machine-card')).filter(c => c !== card);
+            const areSiblingsHidden = siblingCards.some(c => c.style.display === 'none');
+
+            if (!isActive) {
+                // 1. Quitar clase active, resetear textos y ocultar las demás tarjetas
+                document.querySelectorAll('.machine-card').forEach(c => {
+                    c.classList.remove('active');
+                    c.querySelector('.status-text').textContent = 'ESTATUS: SIN SELECCIONAR';
+                    c.querySelector('.status-dot').style.backgroundColor = '#94a3b8';
+                    
+                    if (c !== card) {
+                        c.style.display = 'none';
+                    } else {
+                        c.style.display = 'flex';
+                    }
+                });
+                
+                // 2. Activar la tarjeta seleccionada
+                card.classList.add('active');
+                card.querySelector('.status-text').textContent = 'ESTATUS: SELECCIONADA';
+                card.querySelector('.status-dot').style.backgroundColor = '#10b981';
+                
+                // 3. Actualizar el valor en el input oculto
+                const machineCode = card.getAttribute('data-machine-code');
+                const hiddenInput = document.getElementById('cutting_machines');
+                if (hiddenInput) {
+                    hiddenInput.value = machineCode;
+                    hiddenInput.dispatchEvent(new Event('change'));
+                }
+            } else {
+                // Si la tarjeta ya estaba activa, alternamos la visibilidad de las otras
+                if (areSiblingsHidden) {
+                    siblingCards.forEach(c => {
+                        c.style.display = 'flex';
+                    });
+                } else {
+                    siblingCards.forEach(c => {
+                        c.style.display = 'none';
+                    });
+                }
+            }
+        }
+    </script>
 {% endblock %}

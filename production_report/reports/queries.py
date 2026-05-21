@@ -1,5 +1,5 @@
 from datetime import timedelta
-from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines
+from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, KgpCuttingResults
 from core.utils.db_utils import clear_date
 from django.db.models import F
 import pandas as pd
@@ -13,6 +13,12 @@ def get_single_order_test2_results(build_id):
     workplace__isnull=True
   ).exclude(
     workplace__exact=''
+  ).select_related('build')
+
+def get_single_order_cutting_results(build_id):
+  return KgpCuttingResults.objects.filter(
+    build = build_id,
+    status_id__in=[8,4]
   ).select_related('build')
 
 def get_test2_results(start_date, end_date):
@@ -49,6 +55,9 @@ def get_scrap_results(start_date, end_date):
 def get_cutting_machines():
   return KgpCuttingMachines.objects.all().order_by('machine_id')
 
+def count_registered_orders(machine):
+  return KgpCuttingResults.objects.filter(machine=machine, status_id__in=[8, 4]).count()
+
 def get_order_planning_details(build_id):
   return KgpPlanningOrders.objects.filter(
     build=build_id
@@ -59,7 +68,8 @@ def get_order_planning_details(build_id):
 
 def get_order_details(build_id):
   return KgpProductionOrders.objects.filter(
-    build=build_id
+
+    build__iexact=build_id
   ).first()
 
 def get_fails_results(build_id):
