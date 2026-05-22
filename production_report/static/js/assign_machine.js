@@ -161,7 +161,7 @@ function startSwipe(e) {
         isSwiping: false
     };
 
-    tr.style.transition = 'none';
+    tr.classList.remove('swipe-animate');
 
     document.addEventListener('mousemove', moveSwipe);
     document.addEventListener('touchmove', moveSwipe, { passive: false });
@@ -197,20 +197,11 @@ function moveSwipe(e) {
         // Desplazar visualmente la fila a la derecha
         swipeStart.tr.style.transform = `translateX(${diffX}px)`;
 
-        // Highlight rojo al entrar en el rango de eliminación (35% del ancho de la fila)
         const threshold = swipeStart.width * 0.35;
-        if (diffX > threshold) {
-            swipeStart.tr.style.backgroundColor = '#fef2f2'; // Rojo muy suave
-            swipeStart.tr.style.boxShadow = 'inset 5px 0 0 #ef4444'; // Barra roja a la izquierda
-            swipeStart.tr.querySelectorAll('td').forEach(td => {
-                td.style.color = '#ef4444'; // Textos en rojo de advertencia
-            });
+        if(diffX > threshold) {
+            swipeStart.tr.classList.add('swipe-danger');
         } else {
-            swipeStart.tr.style.backgroundColor = '';
-            swipeStart.tr.style.boxShadow = '';
-            swipeStart.tr.querySelectorAll('td').forEach(td => {
-                td.style.color = '';
-            });
+            swipeStart.tr.classList.remove('swipe-danger');
         }
     }
 }
@@ -233,23 +224,17 @@ function endSwipe(e) {
     const isDeleted = swipeStart.isSwiping && diffX > threshold;
     swipeStart = null;
 
-    tr.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease';
+    tr.classList.add('swipe-animate');
 
     if (isDeleted) {
-        // Animación de salida deslizando y desvaneciendo
-        tr.style.transform = `translateX(${tr.offsetWidth}px)`;
+        tr.style.transform = `translateX(${tr.offsetWidth}px)`
         tr.style.opacity = '0';
-        setTimeout(() => {
+        setTimeout (() => {
             removeOrder(index);
         }, 300);
     } else {
-        // Regresar a la normalidad si no cruzó el límite
-        tr.style.transform = 'translateX(0px)';
-        tr.style.backgroundColor = '';
-        tr.style.boxShadow = '';
-        tr.querySelectorAll('td').forEach(td => {
-            td.style.color = '';
-        });
+        tr.style.transform = `translateX(0px)`;
+        tr.classList.remove('swipe-danger');
     }
 }
 
