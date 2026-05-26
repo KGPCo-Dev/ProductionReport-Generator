@@ -1,17 +1,70 @@
 let orders_to_assign = [];
 let currentSearchedOrder = null
+let masterReelValue = null;
 
 const machineSelector = document.querySelector("#cutting_machines");
 const assignButton = document.querySelector("#btn-confirm-assignation");
 
-const searchBar = document.querySelector("#search-order-form");
+const searchBar = document.querySelector("#master-reel-form");
 const inputValue = document.getElementById("search-input");
 
-searchBar.addEventListener('submit', async (event) => { 
+searchBar.addEventListener('submit', (event) => { 
     event.preventDefault();
 
-    const buildId = inputValue.value.trim();
+    masterReelValue = inputValue.value.trim();
+
+    console.log("Valor ingresado: ", masterReelValue)
+
+    if (!masterReelValue) {
+    Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
+    return;
+    }
+
+    if (masterReelValue) {
+        document.getElementById("search-result-container").style.display = "block";
+    }
+
    
+    // if (!buildId) {
+    //     return;
+    // }
+
+    // try {
+    //     const response = await fetch(`/cutting-machine-assignation/api/search-order/?build_id=${encodeURIComponent(buildId)}`);
+    //     const data = await response.json();
+
+    //     if (!response.ok) {
+    //         console.log("Response was not ok");
+    //         throw new Error(data.error);
+    //     }
+
+    //     console.log("Datos de la orden recibidos");
+
+    //     // ----Data is prepared to be displayed in FrontEnd---- //
+
+    //     currentSearchedOrder = data;
+    //     document.getElementById("current-build-id").textContent = data.build_id;
+    //     document.getElementById("current-cable-type").textContent = data.cable_length;
+
+    //     const lengthElem = document.getElementById("current-cable-length");
+    //     if (lengthElem) {
+    //         lengthElem.textContent = data.cable_length + 'ft';
+    //     }
+
+    // } catch (error) {
+    //     console.error("Error", error.message);
+    //     Swal.fire('Atencion', error.message, 'warning');
+    // }
+
+});
+
+document.querySelector("#order-search-form").addEventListener('submit', async (event) => {
+
+    event.preventDefault();
+
+    const buildInput = document.getElementById("build-id-input");
+    const buildId = buildInput.value.trim();
+    
     if (!buildId) {
         return;
     }
@@ -21,60 +74,48 @@ searchBar.addEventListener('submit', async (event) => {
         const data = await response.json();
 
         if (!response.ok) {
-            console.log("Response was not ok");
-            throw new Error(data.error);
+            console.log("Response was not ok")
+            throw new Error(data.error)
         }
 
         console.log("Datos de la orden recibidos");
-
-        // ----Data is prepared to be displayed in FrontEnd---- //
-
         currentSearchedOrder = data;
-        document.getElementById("current-build-id").textContent = data.build_id;
-        document.getElementById("current-cable-type").textContent = data.cable_length;
 
-        const lengthElem = document.getElementById("current-cable-length");
-        if (lengthElem) {
-            lengthElem.textContent = data.cable_length + 'ft';
-        }
-
-        document.getElementById("search-result-container").style.display = "block";
-
-    } catch(error) {
+    } catch (error) {
         console.error("Error", error.message);
         Swal.fire('Atencion', error.message, 'warning');
-    }
 
-});
-
-document.getElementById("btn-add-order").addEventListener("click", () => { 
-    if(!currentSearchedOrder) return;
-
-    const masterReelInput = document.getElementById("master-reel-input");
-    const masterReelValue = masterReelInput.value.trim();
-
-    if (!masterReelValue) {
-        Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
+        buildInput.value = "";
+        buildInput.focus();
         return;
     }
 
+    console.log("Antes de isDuplicate");
     const isDuplicate = orders_to_assign.some(order => order.build_id === currentSearchedOrder.build_id);
+    console.log("Is duplicate value: ", isDuplicate);
+    console.log("Antes de isDuplicate");
 
-    if(isDuplicate) { 
+    if (isDuplicate) {
         Swal.fire("Atencion", `La orden ${currentSearchedOrder.build_id} ya esta en tu lista`, "warning");
+        buildInput.value = "";
+        buildInput.focus();
         return;
     }
 
     currentSearchedOrder.master_reel = masterReelValue;
-    orders_to_assign.push(currentSearchedOrder);
-    console.log("Lista actual:",orders_to_assign);
+    console.log("CurrentSearchOrder", currentSearchedOrder);
 
-    document.getElementById("search-result-container").style.display = "none";
-    inputValue.value = "";
-    masterReelInput.value = "";
-    currentSearchedOrder = null
+    orders_to_assign.push(currentSearchedOrder);
+    orders_to_assign.sort((a, b) => a.priority - b.priority);
+    
+    console.log("Lista actual:", orders_to_assign);
+
+    buildInput.value = "";
+    buildInput.focus();
+    currentSearchedOrder = null;
 
     renderOrdersTable();
+
  });
 
 window.removeOrder = function(index) {
