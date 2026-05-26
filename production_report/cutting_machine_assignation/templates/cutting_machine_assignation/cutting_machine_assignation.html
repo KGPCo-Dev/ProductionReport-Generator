@@ -61,7 +61,7 @@
                     <span class="badge rounded-circle machine-badge-counter d-flex align-items-center justify-content-center me-2 text-white" >
                         2
                     </span>
-                    <h5 class="m-0 fw-bold machine-assignation-title">Ingresar Master Reel</h5>
+                    <h5 class="m-0 fw-bold machine-assignation-title">Escanea Master Reel</h5>
                 </div>
                 
                 <form id="master-reel-form">
@@ -87,11 +87,11 @@
             <div class="card p-3 rounded-4 shadow-sm border h-100 bg-white d-flex flex-column justify-content-between" style="max-width: 440px; margin: 0 auto;">
                 <div>
                     <!-- Search Order result indicator-->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge founded-order-indicator px-3 py-2 rounded-pill fw-bold">
-                            ORDEN ENCONTRADA
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="badge rounded-circle machine-badge-counter d-flex align-items-center justify-content-center me-2 text-white" >
+                            3
                         </span>
-                        <h4 class="m-0 fw-bold founded-order-highlight" id="current-build-id"></h4>
+                        <h5 class="m-0 fw-bold machine-assignation-title">Escanea Número de Orden</h5>
                     </div>
 
                     <!-- Orden Search Bar -->
@@ -156,7 +156,7 @@
             const areSiblingsHidden = siblingCards.some(c => c.style.display === 'none');
 
             if (!isActive) {
-                // 1. Quitar clase active, resetear textos y ocultar las demás tarjetas
+
                 document.querySelectorAll('.machine-card').forEach(c => {
                     c.classList.remove('active');
                     c.querySelector('.status-text').textContent = 'ESTATUS: SIN SELECCIONAR';
@@ -169,12 +169,15 @@
                     }
                 });
                 
-                // 2. Activar la tarjeta seleccionada
+                if (masterReelValue) {
+                    console.log("Valor ingresado: ", masterReelValue)
+                } else {
+                    console.log("No val");
+                }
                 card.classList.add('active');
                 card.querySelector('.status-text').textContent = 'ESTATUS: SELECCIONADA';
                 card.querySelector('.status-dot').style.backgroundColor = '#10b981';
                 
-                // 3. Actualizar el valor en el input oculto
                 const machineCode = card.getAttribute('data-machine-code');
                 const hiddenInput = document.getElementById('cutting_machines');
                 if (hiddenInput) {
@@ -182,7 +185,6 @@
                     hiddenInput.dispatchEvent(new Event('change'));
                 }
             } else {
-                // Si la tarjeta ya estaba activa, alternamos la visibilidad de las otras
                 if (areSiblingsHidden) {
                     siblingCards.forEach(c => {
                         c.style.display = 'flex';

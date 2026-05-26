@@ -107,7 +107,7 @@ document.querySelector("#order-search-form").addEventListener('submit', async (e
 
     orders_to_assign.push(currentSearchedOrder);
     orders_to_assign.sort((a, b) => a.priority - b.priority);
-    
+
     console.log("Lista actual:", orders_to_assign);
 
     buildInput.value = "";
@@ -140,17 +140,16 @@ function renderOrdersTable() {
         const tr = document.createElement("tr");
         tr.setAttribute('data-index', index);
         tr.style.position = 'relative';
-        tr.style.userSelect = 'none'; // Evitar selección de texto al arrastrar
+        tr.style.userSelect = 'none'; 
         tr.innerHTML = `
             <td class="text-start">
                 <span class="drag-handle text-muted me-2" style="cursor: grab; display: inline-flex; align-items: center;">
-                    <i class="bi bi-grip-vertical fs-5"></i>
                 </span>
                 <span class="fw-semibold">${index + 1}</span>
             </td>
             <td>${order.priority}</td>
             <td>${order.build_id}</td>
-            <td>${order.cable_length}</td>
+            <td>${order.cable_length} ft</td>
             <td>${order.tethers}</td>
             <td><span class="badge px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 0.8rem; background-color: #f1f5f9 !important; color: #475569 !important; border: 1px solid #cbd5e1 !important;">${order.master_reel}</span></td>
         `;
@@ -158,21 +157,7 @@ function renderOrdersTable() {
     });
 }
 
-// Inicialización de SortableJS con soporte de drag handle
 const sortableTbody = document.getElementById("pending-orders-body");
-
-new Sortable(sortableTbody, {
-    animation: 150,
-    ghostClass: 'bg-info',
-    handle: '.drag-handle', // Solo reordenar al arrastrar desde el grip icon
-    onEnd: function(evt) {
-        const { oldIndex, newIndex } = evt;
-        const movedItem = orders_to_assign.splice(oldIndex, 1)[0];
-        orders_to_assign.splice(newIndex, 0, movedItem);
-        renderOrdersTable();
-        console.log("Arreglo reordenado:", orders_to_assign);
-    }
-});
 
 // Lógica de Deslizamiento (Swipe to Delete) nativa
 let swipeStart = null;
