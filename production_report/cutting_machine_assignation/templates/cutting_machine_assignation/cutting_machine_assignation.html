@@ -151,6 +151,26 @@
     
     <script>
         function selectMachine(card) {
+            if (masterReelValue !== null && masterReelValue !== "") {
+                Swal.fire({
+                    title: "Proceso en marcha",
+                    text: "Termina de asignar las ordenes o reinicia el proceso.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Continuar",
+                    cancelButtonText: "Reiniciar proceso",
+                    customClass: {
+                        cancelButton: 'kgp-cancel-button',
+                        confirmButton: 'kgp-confirm-button'
+                    }
+                }).then((result) => {
+                    if (result.dismiss === Swal.DismissReason.cancel) {
+                        window.location.reload();
+                    }
+                });
+                return;
+            }
+
             const isActive = card.classList.contains('active');
             const siblingCards = Array.from(document.querySelectorAll('.machine-card')).filter(c => c !== card);
             const areSiblingsHidden = siblingCards.some(c => c.style.display === 'none');
@@ -158,10 +178,9 @@
             if (!isActive) {
 
                 document.querySelectorAll('.machine-card').forEach(c => {
-                    c.classList.remove('active');
+
                     c.querySelector('.status-text').textContent = 'ESTATUS: SIN SELECCIONAR';
                     c.querySelector('.status-dot').style.backgroundColor = '#94a3b8';
-                    
                     if (c !== card) {
                         c.style.display = 'none';
                     } else {
@@ -169,11 +188,6 @@
                     }
                 });
                 
-                if (masterReelValue) {
-                    console.log("Valor ingresado: ", masterReelValue)
-                } else {
-                    console.log("No val");
-                }
                 card.classList.add('active');
                 card.querySelector('.status-text').textContent = 'ESTATUS: SELECCIONADA';
                 card.querySelector('.status-dot').style.backgroundColor = '#10b981';

@@ -1,76 +1,83 @@
 {% load socialaccount %}
 {% load static %}
 
-<div class="container-fluid align-items-center">
+<div class="container-fluid align-items-center d-flex justify-content-between position-relative">
 
     <a class="navbar-brand d-flex align-items-center" href="{% url 'home:home_screen' %}"> 
         <img src="{% static 'img/logo.png' %}" alt="KGPCo Logo" width="100" height="50">
     </a>
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navLinks" aria-controls="navLinks" aria-expanded="false" arial-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <form class="bs-nav-search d-none d-lg-flex align-items-center nav-center-absolute" action="{% url 'order_tracker:order_tracker' %}" method="GET">
-
+    <form class="bs-nav-search d-flex align-items-center nav-center-absolute" action="{% url 'order_tracker:order_tracker' %}" method="GET">
         <i class="bi bi-search ms-3"></i>
         <input type="text" name="search" placeholder="No. Orden (Build ID)" required>
-
     </form>
 
-    <div class="collapse navbar-collapse justify-content-end" id="navLinks">
-        <ul class="navbar-nav mb-2 mb-lg-0 align-items-center gap-2">
+    <div class="nav-links-container" id="navLinks">
+        <ul class="navbar-nav align-items-center gap-2 flex-row">
 
-            <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
-                <div class="or-icon d-flex align-items-center cursor-pointer">
-                    <i class="bi bi-file-earmark-bar-graph-fill"></i>
-                    <a class="nav-link or-link" href="{% url 'report_generator:report_list' %}">Reportes</a>
-                </div>
-            </li>
-
-
-            <li class="nav-item d-none d-lg-block">
-                <div class="nav-divider"></div>
-            </li>
-
+            <!-- Report Genarator Icon Displayed -->
             <li class="nav-item">
-                <div class="or-icon d-flex align-items-center">
+                <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'report_generator' %}active-section{% endif %}" href="{% url 'report_generator:report_list' %}">
+                    <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                    <span class="nav-text">Reportes</span>
+                </a>
+            </li>
+
+            <!-- Page Divider -->
+            <li class="nav-item d-none d-lg-block">
+                <div class="nav-divider"></div>
+            </li>
+
+            <!-- Order Search Icon Displayed -->
+            <li class="nav-item">
+                <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'order_tracker' %}active-section{% endif %}" href="{% url 'order_tracker:order_tracker' %}">
                     <i class="bi bi-clipboard2-minus-fill"></i>
-                    <a class="nav-link or-link" href="{% url 'order_tracker:order_tracker' %}">Orden</a>
-                </div>
+                    <span class="nav-text">Orden</span>
+                </a>
             </li>
 
             <li class="nav-item d-none d-lg-block">
                 <div class="nav-divider"></div>
             </li>
 
-            <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
-                {% if user.is_authenticated %}
-                    <div class="or-icon d-flex align-items-center cursor-pointer dropdown">
-                        <div class="or-avatar d-flex justify-content-center align-items-center rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-fill"></i>
-                        </div>
-                        <span class="ms-2 small dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ user.first_name|default:user.email|default:"Usuario" }}
-                        </span>
+            <!-- Machine Selection -->
+            <li class="nav-item">
+                <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'cutting_machine_assignation' %}active-section{% endif %}" href="{% url 'cutting_machine_assignation:machine_assignation' %}">
+                    <i class=" bi bi-scissors"></i>
+                    <span class="nav-text">Maquinas</span>
+                </a>
+            </li>
 
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
-                            <li><h6 class="dropdown-header text-muted small">Cuentas corporativas</h6></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form id="logoutFormSecret" method="post" action="{% url 'account_logout' %}" style="display: none;">
-                                    {% csrf_token %}
-                                </form>
-                                <button type="button" id="logoutConfirmBtn" class="dropdown-item text-danger d-flex align-items-center gap-2" style="background: none; border: none; width: 100%;">
-                                    <i class ="bi bi-box-arrow-right"></i>Cerrar Sesion
-                                </button>
-                            </li>
-                        </ul>
+            <li class="nav-item d-none d-lg-block">
+                <div class="nav-divider"></div>
+            </li>
+
+            <!-- User LogIn -->
+            <li class="nav-item dropdown">
+                {% if user.is_authenticated %}
+                    <div class="or-link d-flex align-items-center gap-2 cursor-pointer dropdown-toggle-custom" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="or-avatar d-flex justify-content-center align-items-center rounded-circle" style="width: 24px; height: 24px; background: rgba(255, 255, 255, 0.2);">
+                            <i class="bi bi-person-fill text-white"></i>
+                        </div>
+                        <span class="nav-text">{{ user.first_name|default:user.email|default:"Usuario" }}</span>
                     </div>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                        <li><h6 class="dropdown-header text-muted small">Cuentas corporativas</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form id="logoutFormSecret" method="post" action="{% url 'account_logout' %}" style="display: none;">
+                                {% csrf_token %}
+                            </form>
+                            <button type="button" id="logoutConfirmBtn" class="dropdown-item text-danger d-flex align-items-center gap-2" style="background: none; border: none; width: 100%;">
+                                <i class="bi bi-box-arrow-right">Cerrar Sesion</i>
+                            </button>
+                        </li>
+                    </ul>
                 {% else %}
-                    <a href="{% provider_login_url 'microsoft' %}" class="btn btn-outline-dark d-flex align-items-center gap-2 rounded-pill px-4" style="background-color: white; border-color: #dee2e6">
+                    <a href="{% provider_login_url 'microsoft' %}" class="nav-link or-link d-flex align-items-center gap-2">
                         <i class="bi bi-microsoft" style="color: #004aef"></i>
-                        <span class="small fw-semibold">Iniciar con Microsoft</span>
+                        <span class="nav-text small fw-semibold">Iniciar con Microsoft</span>
                     </a>
                 {% endif %}
             </li>
