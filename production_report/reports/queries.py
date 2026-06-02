@@ -1,4 +1,6 @@
 from datetime import timedelta
+from django.db.models import Case, Value, When, IntegerField, FilteredRelation, Q, F, Subquery, OuterRef
+from django.db.models.expressions import RawSQL
 from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, KgpCuttingResults
 from core.utils.db_utils import clear_date
 from django.db.models import F
@@ -20,6 +22,40 @@ def get_single_order_cutting_results(build_id):
     build = build_id,
     status_id__in=[8,4]
   ).select_related('build')
+
+def get_machines_status():
+  active_results = KgpCuttingResults.objects.filter(
+    machine_id=OuterRef('machine_id'),
+    status_id__in=[4, 8]
+  ).annotate(
+    status_priority=Case(
+      When(status_id=4, then=Value(0)),
+      default=Value(1),
+      output_field=IntegerField(),
+    )
+  ).order_by(
+    'status_priority',
+    'stack_id'
+  )
+
+  return list(
+    KgpCuttingMachines.objects.annotate(
+      build_id=Subquery(active_results.values('build_id')[:1]),
+      status_description=Subquery(active_results.values('status__status_description_spanish')[:1]),
+      cable_type=Subquery(active_results.values('build__cable_type')[:1]),
+      master_reel=Subquery(active_results.values('master_reel')[:1]),
+      cutting_wip_code=Subquery(active_results.values('cutting_wip_area__cutting_wip_code')[:1]),
+      has_master_reel=Subquery(active_results.values('has_master_reel')[:1])
+    ).values(
+      'machine_id',
+      'build_id',
+      'status_description',
+      'cable_type',
+      'master_reel',
+      'cutting_wip_code',
+      'has_master_reel'
+    ).order_by('machine_id')
+  )
 
 def get_test2_results(start_date, end_date):
   return KgpTest2Results.objects.filter(

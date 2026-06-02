@@ -30,9 +30,9 @@
 
             <!-- Order Search Icon Displayed -->
             <li class="nav-item">
-                <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'order_tracker' %}active-section{% endif %}" href="{% url 'order_tracker:order_tracker' %}">
-                    <i class="bi bi-clipboard2-minus-fill"></i>
-                    <span class="nav-text">Orden</span>
+                <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'live_dashboards' %}active-section{% endif %}" href="{% url 'live_dashboards:live_dashboards' %}">
+                    <img src="{% static 'icons/tv.svg' %}" height="16" style="filter: brightness(0) invert(1);">
+                    <span class="nav-text">Monitoreo</span>
                 </a>
             </li>
 

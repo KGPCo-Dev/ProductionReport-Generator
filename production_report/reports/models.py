@@ -251,6 +251,7 @@ class KgpOrdersStatus(models.Model):
     status = models.AutoField(primary_key=True, db_column='status_id')
     status_code = models.TextField(unique=True, blank=True, null=True)
     status_description = models.TextField(blank=True, null=True)
+    status_description_spanish = models.TextField(blank=True, null=True)
     internal_descrption = models.TextField(blank=True, null=True, db_comment='This section is to explain what every code is')
 
     class Meta:
@@ -702,6 +703,7 @@ class KgpCuttingResults(models.Model):
     stack_id = models.SmallIntegerField(blank=True, null=True, db_column='stack_id')
     production_shift = models.SmallIntegerField(blank=True, null=True)
     completed_date = models.DateTimeField(blank=True, null=True)
+    has_master_reel = models.BooleanField()
 
     class Meta:
         managed = False

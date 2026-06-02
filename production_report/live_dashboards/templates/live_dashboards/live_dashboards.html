@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Inicio - KGPCo{% endblock %}
+
+{% block content %}
+    <div class="d-flex align-items-center mb-3">
+        <div class="accent-line me-3"></div>
+        <h1 class="h3 mb-0 fw-bold">Monitoreo de Maquinas de Corte</h1>
+    </div>
+
+    {% if machines_assignation_results %}
+
+        <div class="js-table-container" id="machine-assignation-container">
+            {% include "includes/machines_assignation_table.html" with results=machines_assignation_results %}
+        </div>
+        
+    {% else %}
+        <h1>No results :c</h1>
+    {% endif %}
+{% endblock %}

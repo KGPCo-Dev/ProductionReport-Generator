@@ -1,0 +1,83 @@
+{% if results %}
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead class="text-white">
+                    <tr>
+                        <th class="py-3 px-4">Maquina</th>
+                        <th class="py-3 px-4">No Orden</th>
+                        <th class="py-3 px-4">Estatus</th>
+                        <th class="py-3 px-4">Tipo de Cable</th>
+                        <th class="py-3 px-4">Master Reel</th>
+                        <th class="py-3 px-4">Area de WIP</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in results %}
+                        <tr>
+                            <td class="px-4 py-3 fw-bold text-dark" style="font-size: 1.05rem;">{{ row.machine_id|default:"-" }}</td>
+                            <td class="px-4 py-3 font-monospace fw-semibold text-secondary" style="font-size: 0.95rem;">{{ row.build_id|default:"Sin ordenes en la fila" }}</td>
+                            <td class="px-4 py-3">
+                                {% if row.status_description %}
+                                    {% if "progreso" in row.status_description|lower %}
+                                        <span class="status-badge status-badge-in-progress">
+                                            <i class="bi bi-gear-fill spin-icon"></i>
+                                            {{ row.status_description }}
+                                        </span>
+                                    {% elif "esperando" in row.status_description|lower %}
+                                        <span class="status-badge status-badge-waiting">
+                                            <i class="bi bi-clock-history"></i>
+                                            {{ row.status_description }}
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-badge-default">
+                                            <i class="bi bi-info-circle"></i>
+                                            {{ row.status_description }}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-secondary" style="font-size: 0.9rem;">{{ row.cable_type|default:"-" }}</td>
+                        <td class="px-4 py-3" style="font-size: 0.9rem;">
+                            {% if row.has_master_reel == True %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span class="text-dark font-monospace fw-bold">{{ row.master_reel|default:"-" }}</span>
+                                </div>
+                            {% elif row.has_master_reel == False %}
+                                <div class="d-flex align-items-center gap-2 text-muted">
+                                    <i class="bi bi-x-circle-fill text-secondary" style="opacity: 0.6;"></i>
+                                <span class="font-monospace fw-semibold">{{ row.master_reel|default:"-" }}</span>
+                                </div>
+                            {% else %}
+                            <span class="text-muted fst-italic">N/A</span>
+                            {% endif %}
+                        </td>
+                            <td class="px-4 py-3" style="font-size: 0.9rem;">
+                                {% if row.cutting_wip_code and row.cutting_wip_code != '-' %}
+                                    <span class="badge bg-light text-dark border px-2 py-1 fw-semibold">{{ row.cutting_wip_code }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                           <td colspan="{{ results|length }}" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-search d block fs-2 mb-2"></i>
+                                No se encontraron registros
+                            </div>
+                           </td> 
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+{% endif %}
