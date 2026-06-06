@@ -112,7 +112,8 @@ def save_machine_assignation(request):
                             machine=machine_instance,
                             master_reel=order_data.get('master_reel'),
                             status=queue_status,
-                            stack_id=max_stack + i + 1
+                            stack_id=max_stack + i + 1,
+                            has_master_reel=False
                         )
                     )
 

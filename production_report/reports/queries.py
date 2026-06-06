@@ -1,5 +1,5 @@
 from datetime import timedelta
-from django.db.models import Case, Value, When, IntegerField, FilteredRelation, Q, F, Subquery, OuterRef
+from django.db.models import Case, Value, When, IntegerField, FilteredRelation, Q, F, Subquery, OuterRef, TextField
 from django.db.models.expressions import RawSQL
 from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, KgpCuttingResults
 from core.utils.db_utils import clear_date
@@ -38,22 +38,33 @@ def get_machines_status():
     'stack_id'
   )
 
+
   return list(
     KgpCuttingMachines.objects.annotate(
       build_id=Subquery(active_results.values('build_id')[:1]),
       status_description=Subquery(active_results.values('status__status_description_spanish')[:1]),
       cable_type=Subquery(active_results.values('build__cable_type')[:1]),
       master_reel=Subquery(active_results.values('master_reel')[:1]),
+      stack_id=Subquery(active_results.values('stack_id')[:1]),
       cutting_wip_code=Subquery(active_results.values('cutting_wip_area__cutting_wip_code')[:1]),
-      has_master_reel=Subquery(active_results.values('has_master_reel')[:1])
+      has_master_reel=Subquery(active_results.values('has_master_reel')[:1]),
+      raw_next_master_reel=Subquery(active_results.values('master_reel')[1:2])
+    ).annotate(
+      next_master_reel=Case(
+        When(raw_next_master_reel=F('master_reel'), then=Value(None)),
+        default=F('raw_next_master_reel'),
+        output_field=TextField()
+      )
     ).values(
       'machine_id',
       'build_id',
       'status_description',
       'cable_type',
       'master_reel',
+      'stack_id',
       'cutting_wip_code',
-      'has_master_reel'
+      'has_master_reel',
+      'next_master_reel'
     ).order_by('machine_id')
   )
 

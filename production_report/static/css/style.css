@@ -253,52 +253,6 @@ body {
    border-bottom: none;
 }
 
-/* Modern Status Badges */
-.status-badge {
-   display: inline-flex;
-   align-items: center;
-   gap: 6px;
-   padding: 0.35rem 0.85rem;
-   font-size: 0.75rem;
-   font-weight: 600;
-   text-transform: uppercase;
-   letter-spacing: 0.04em;
-   border-radius: 30px;
-   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-   transition: all 0.2s ease;
-}
-
-.status-badge-in-progress {
-   background-color: #e6f7ed; /* Light green background, matching finished style */
-   border: 1px solid #34a853; /* Green border */
-   color: #137333; /* Dark green text */
-}
-
-.status-badge-waiting {
-   background-color: #fffbeb; /* Light amber background */
-   border: 1px solid #f59e0b; /* Amber border */
-   color: #b45309; /* Dark amber text */
-}
-
-.status-badge-default {
-   background-color: #f8fafc; /* Light slate background */
-   border: 1px solid #cbd5e1; /* Slate border */
-   color: #475569; /* Slate text */
-}
-
-.spin-icon {
-   animation: spin 3s linear infinite;
-   display: inline-block;
-}
-
-@keyframes spin {
-   from {
-      transform: rotate(0deg);
-   }
-   to {
-      transform: rotate(360deg);
-   }
-}
 
 /* Search Bar Style */
 .search-container {

@@ -65,6 +65,16 @@
                                 {% endif %}
                             </td>
                         </tr>
+
+                        {% if row.next_master_reel %}
+                            <tr class="next-reel_warning-row">
+                                
+                                <td colspan="6" >
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    Siguiente Master Reel: {{ row.next_master_reel }}
+                                </td>
+                            </tr>
+                        {% endif %}
                     {% empty %}
                         <tr>
                            <td colspan="{{ results|length }}" class="text-center py-5">

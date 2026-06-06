@@ -2,6 +2,10 @@
 {% load static %}
 {% block title %} Inicio - KGPCo{% endblock %}
 
+{%block extra_css%}
+    <link rel="stylesheet" href="{% static 'css/live_dashboards.css' %}"></link>
+{% endblock %}
+
 {% block content %}
     <div class="d-flex align-items-center mb-3">
         <div class="accent-line me-3"></div>
