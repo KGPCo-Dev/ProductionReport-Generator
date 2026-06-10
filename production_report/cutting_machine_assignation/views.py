@@ -1,14 +1,17 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.db.models import Max
 from reports.queries import get_cutting_machines, get_order_details, get_order_planning_details, count_registered_orders, get_single_order_cutting_results
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
-
 import json
 
+def is_cutting_lead(user):
+    return user.is_authenticated and (user.groups.filter(name="Cutting-Lead").exists() or user.is_superuser)
+
 @login_required
+@user_passes_test(is_cutting_lead)
 def cutting_machine_assignation_view(request):
 
     cutting_machines = []
@@ -28,6 +31,11 @@ def cutting_machine_assignation_view(request):
 @login_required
 def get_requested_order(request):
 
+    if not is_cutting_lead(request.user):
+        return JsonResponse({
+            'success':False, 'error':'No tienes permisos para realizar esta accion.'
+        }, status=403)
+    
     build_id = request.GET.get('build_id', '').strip()
 
     if not build_id:
@@ -70,6 +78,12 @@ def get_requested_order(request):
 
 @login_required
 def save_machine_assignation(request):
+
+    if not is_cutting_lead(request.user):
+        return JsonResponse({
+            'success':False, 'error':'No tienes permisos para realizar esta accion.'
+        }, status=403)
+
     if request.method == 'POST':
         try:
             data = json.loads(request.body)

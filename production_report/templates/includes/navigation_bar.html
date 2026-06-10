@@ -1,5 +1,6 @@
 {% load socialaccount %}
 {% load static %}
+{% load auth_extras %}
 
 <div class="container-fluid align-items-center d-flex justify-content-between position-relative">
 
@@ -41,16 +42,20 @@
             </li>
 
             <!-- Machine Selection -->
-            <li class="nav-item">
-                <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'cutting_machine_assignation' %}active-section{% endif %}" href="{% url 'cutting_machine_assignation:machine_assignation' %}">
-                    <i class=" bi bi-scissors"></i>
-                    <span class="nav-text">Maquinas</span>
-                </a>
-            </li>
+            {% if request.user|has_group:"Cutting-Lead" %}
 
-            <li class="nav-item d-none d-lg-block">
-                <div class="nav-divider"></div>
-            </li>
+                <li class="nav-item">
+                    <a class="nav-link or-link d-flex align-items-center {% if request.resolver_match.app_name == 'cutting_machine_assignation' %}active-section{% endif %}" href="{% url 'cutting_machine_assignation:machine_assignation' %}">
+                        <i class=" bi bi-scissors"></i>
+                        <span class="nav-text">Corte</span>
+                    </a>
+                </li>
+
+                <li class="nav-item d-none d-lg-block">
+                    <div class="nav-divider"></div>
+                </li>
+
+            {% endif %}
 
             <!-- User LogIn -->
             <li class="nav-item dropdown">

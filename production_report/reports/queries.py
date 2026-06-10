@@ -1,7 +1,9 @@
 from datetime import timedelta
 from django.db.models import Case, Value, When, IntegerField, FilteredRelation, Q, F, Subquery, OuterRef, TextField
 from django.db.models.expressions import RawSQL
-from reports.models import KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, KgpCuttingResults
+from reports.models import (KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, 
+                            KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, 
+                            KgpCuttingResults, KgpSubassemblyResults)
 from core.utils.db_utils import clear_date
 from django.db.models import F
 import pandas as pd
@@ -67,6 +69,39 @@ def get_machines_status():
       'next_master_reel'
     ).order_by('machine_id')
   )
+
+def get_subassemble_table():
+  cutting_subquery = KgpCuttingResults.objects.filter(
+    build_id= OuterRef('build'),
+    status_id__in =[3, 4]
+  ).annotate(
+    status_priority=Case(
+      When(status_id=3, then=Value(0)),
+      default=Value(1),
+      output_field=IntegerField(),
+    )
+  ).order_by('status_priority', 'stack_id').values('status_id')[:1]
+  
+  subassembly_subquery = KgpSubassemblyResults.objects.filter(
+    build_id=OuterRef('build')
+  ).order_by('-id').values('status_id')[:1]
+
+  orders_data = (
+    KgpProductionOrders.objects.annotate(
+      cutting_status_id=Subquery(cutting_subquery),
+      sub_status_id=Subquery(subassembly_subquery),
+      order=F('build')
+    )
+    .filter(cutting_status_id__isnull=False)
+    .values(
+      'order',
+      'cutting_status_id',
+      'sub_status_id',
+      'cable_type',
+      'tethers'
+    )
+  )
+  return list(orders_data)
 
 def get_test2_results(start_date, end_date):
   return KgpTest2Results.objects.filter(

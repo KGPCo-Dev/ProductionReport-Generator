@@ -7,18 +7,34 @@
 {% endblock %}
 
 {% block content %}
+
+    <div class="col-md-4 py-2">
+        <label for="table-type" class="form-label fw-bold">Tipo de Tabla</label>
+        <select name="table-type" id="table-type" class="form-select">
+            <option value="cutting_machines_table" {% if table_type == 'cutting_machines' %}selected{% endif %}>Maquinas de Corte</option>
+            <option value="subassemble_table" {% if table_type == 'subassemble' %}selected{% endif %}>Ordenes Subensamble</option>
+        </select>
+    </div>
+
     <div class="d-flex align-items-center mb-3">
         <div class="accent-line me-3"></div>
         <h1 class="h3 mb-0 fw-bold">Monitoreo de Maquinas de Corte</h1>
     </div>
 
-    {% if machines_assignation_results %}
-
-        <div class="js-table-container" id="machine-assignation-container">
+    <div class="js-table-container" id ="machine-assignation-container">
+        {% if machines_assignation_results %}
             {% include "includes/machines_assignation_table.html" with results=machines_assignation_results %}
-        </div>
-        
-    {% else %}
-        <h1>No results :c</h1>
-    {% endif %}
+        {% else %}
+            <div class="alert alert-info shadow-sm border-0">
+                <i class=" bi bi-info-circle-fill me-2"></i>
+                No se encontraron registros de maquinas asignadas.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="{% static 'js/ajax_machine_results.js' %}"></script>
+
 {% endblock %}

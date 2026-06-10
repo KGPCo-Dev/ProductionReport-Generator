@@ -721,3 +721,17 @@ class KgpPlanningOrders(models.Model):
         managed = False
         db_table = 'kgp_planning_orders'
 
+class KgpSubassemblyResults(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    entered_date = models.DateTimeField()
+    build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, db_column='build_id', to_field='build')
+    kit_delivered = models.BooleanField(blank=True, null=True)
+    employee_number = models.BigIntegerField(blank=True, null=True)
+    updated_date = models.TextField(blank=True, null=True)
+    scrap = models.BooleanField(blank=True, null=True)
+    status = models.ForeignKey(KgpOrdersStatus, models.DO_NOTHING, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'kgp_subassembly_results'
+        db_table_comment = 'This table will get the subensamble orders that are in WIP'

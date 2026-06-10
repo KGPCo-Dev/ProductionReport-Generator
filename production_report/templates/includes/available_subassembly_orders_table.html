@@ -1,0 +1,27 @@
+{% if results %}
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+
+            <table class="table table-custom table-hover align-middle mb-0">
+                <thead class="text-white">
+                    <tr>
+                        <th class="py-3 px-4">Order</th>
+                        <th class="py-3 px-4">Estatus de Corte</th>
+                        <th class="py-3 px-4">Estatus Sub-Ensamble</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in results %}
+                        
+                    <tr class="px-4 py-3 fw-bold text-dark" style="font-size: 1.05rem;">Test</tr>
+                    <tr class="px-4 py-3 fw-bold text-dark" style="font-size: 1.05rem;">Test</tr>
+                    <tr class="px-4 py-3 fw-bold text-dark" style="font-size: 1.05rem;">Test</tr>
+                    {% empty %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+{% endif %}
