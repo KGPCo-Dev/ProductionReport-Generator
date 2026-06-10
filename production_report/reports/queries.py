@@ -80,23 +80,23 @@ def get_subassemble_table():
       default=Value(1),
       output_field=IntegerField(),
     )
-  ).order_by('status_priority', 'stack_id').values('status_id')[:1]
+  ).order_by('status_priority', 'stack_id').values('status__status_description_spanish')[:1]
   
   subassembly_subquery = KgpSubassemblyResults.objects.filter(
     build_id=OuterRef('build')
-  ).order_by('-id').values('status_id')[:1]
+  ).order_by('-id').values('status__status_description_spanish')[:1]
 
   orders_data = (
     KgpProductionOrders.objects.annotate(
-      cutting_status_id=Subquery(cutting_subquery),
-      sub_status_id=Subquery(subassembly_subquery),
+      cutting_status=Subquery(cutting_subquery),
+      sub_status=Subquery(subassembly_subquery),
       order=F('build')
     )
-    .filter(cutting_status_id__isnull=False)
+    .filter(cutting_status__isnull=False)
     .values(
       'order',
-      'cutting_status_id',
-      'sub_status_id',
+      'cutting_status',
+      'sub_status',
       'cable_type',
       'tethers'
     )
@@ -334,3 +334,14 @@ REPORT_CONFIG = {
          }
     },
  }
+
+MONITORING_TABLE_CONFIG = {
+  'machines_status_table': {
+    'query': get_machines_status,
+    'partial_template': 'includes/machines_assignation_table.html'
+  },
+  'subassembly_status_table': {
+    'query': get_subassemble_table,
+    'partial_template': 'includes/available_subassembly_orders_table.html'
+  }
+}

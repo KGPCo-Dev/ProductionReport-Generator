@@ -1,13 +1,21 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const tableContainer = document.getElementById('machine-assignation-container');
+    const tableContainer = document.getElementById('dashboard-table-container');
+    const tableTypeSelect = document.getElementById('table_type');
 
-    if (!tableContainer) return;
+    if (!tableContainer || !tableTypeSelect) return;
 
     function updateTable() {
 
-        console.log('updateTable inicializado');
+        const tableType = tableTypeSelect.value;
+        const timestamp = new Date().getTime();
         
-        fetch('?partial=true')
+        console.log('Actualizando tabla en segundo plano:', tableType);
+        
+        fetch(`${window.location.pathname}?partial=true&table_type=${tableType}&_=${timestamp}`, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+        })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Error al actualizar la tabla de monitoreo')
@@ -15,9 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.text();
         })
         .then(html => {
-            if (html.trim()) {
-                tableContainer.innerHTML = html;
-            }
+         
+            tableContainer.innerHTML = html;
         })
         .catch(error => {
             console.error('Fallo en la sincronizacion con las base de datos', error);

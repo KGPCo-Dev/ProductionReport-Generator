@@ -3,33 +3,28 @@
 {% block title %} Inicio - KGPCo{% endblock %}
 
 {%block extra_css%}
-    <link rel="stylesheet" href="{% static 'css/live_dashboards.css' %}"></link>
+    <link rel="stylesheet" href="{% static 'css/live_dashboards.css' %}">
 {% endblock %}
 
 {% block content %}
 
     <div class="col-md-4 py-2">
-        <label for="table-type" class="form-label fw-bold">Tipo de Tabla</label>
-        <select name="table-type" id="table-type" class="form-select">
-            <option value="cutting_machines_table" {% if table_type == 'cutting_machines' %}selected{% endif %}>Maquinas de Corte</option>
-            <option value="subassemble_table" {% if table_type == 'subassemble' %}selected{% endif %}>Ordenes Subensamble</option>
-        </select>
+        <form id="table-type-form" method="GET">
+            <label for="table_type" class="form-label fw-bold">Tipo de Tabla</label>
+            <select name="table_type" id="table_type" class="form-select" onchange="document.getElementById('table-type-form').submit();">
+                <option value="machines_status_table" {% if table_type == 'machines_status_table' %}selected{% endif %}>Maquinas de Corte</option>
+                <option value="subassembly_status_table" {% if table_type == 'subassembly_status_table' %}selected{% endif %}>Ordenes Subensamble</option>
+            </select>
+        </form>
     </div>
 
     <div class="d-flex align-items-center mb-3">
         <div class="accent-line me-3"></div>
-        <h1 class="h3 mb-0 fw-bold">Monitoreo de Maquinas de Corte</h1>
+        <h1 class="h3 mb-0 fw-bold" id="dashboard-title">Monitoreo en Tiempo Real</h1>
     </div>
 
-    <div class="js-table-container" id ="machine-assignation-container">
-        {% if machines_assignation_results %}
-            {% include "includes/machines_assignation_table.html" with results=machines_assignation_results %}
-        {% else %}
-            <div class="alert alert-info shadow-sm border-0">
-                <i class=" bi bi-info-circle-fill me-2"></i>
-                No se encontraron registros de maquinas asignadas.
-            </div>
-        {% endif %}
+    <div class="js-table-container" id="dashboard-table-container">
+        {% include partial_template with results=results %}
     </div>
 {% endblock %}
 
