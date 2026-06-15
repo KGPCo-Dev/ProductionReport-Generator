@@ -1,34 +1,52 @@
-# Base Framework
-Django>=4.2,<5.2
+# ==========================================
+# Core Framework & Security
+# ==========================================
+Django==5.1.15
+python-dotenv==1.0.1
 
+# ==========================================
 # Database Connection (Supabase/Postgres)
-psycopg2-binary
-dj-database-url
-python-dotenv
-supabase
-djangorestframework
+# ==========================================
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+supabase==2.4.0
+djangorestframework==3.15.1
+pgvector==0.2.5
 
-# Data Processing & Excel
-pandas
-openpyxl
-XlsxWriter
-django-import-export
+# ==========================================
+# Authentication & Microsoft Integration
+# ==========================================
+django-allauth==0.61.1
+msal==1.28.0
+O365==2.0.35
 
+# ==========================================
+# Data Processing & Excel Reports
+# ==========================================
+pandas==2.2.2
+openpyxl==3.1.2
+XlsxWriter==3.2.0
+django-import-export==4.1.1
+
+# ==========================================
+# AI, RAG & Document Processing
+# ==========================================
+langchain==0.1.20
+langchain-community==0.0.38
+sentence-transformers==2.7.0
+PyMuPDF==1.24.2
+
+# ==========================================
+# UI Framework & UX
+# ==========================================
+django-bootstrap5==24.1
+
+# ==========================================
 # Production Server
-gunicorn
+# ==========================================
+gunicorn==23.0.0
 
-# Development Tools
-django-debug-toolbar
-
-# UI Framework
-django-bootstrap5
-
-# IA y RAG
-pgvector
-langchain
-langchain-community
-sentence-transformers
-PyMuPDF
-O365
-msal
-django-allauth
+# ==========================================
+# Development & Debugging Tools
+# ==========================================
+django-debug-toolbar==4.3.0
