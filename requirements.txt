@@ -19,5 +19,5 @@ gunicorn
 # Development Tools
 django-debug-toolbar
 
-# UI Framework
+# UI  Framework
 django-bootstrap5
