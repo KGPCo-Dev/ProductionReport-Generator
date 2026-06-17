@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN python production_report/manage.py collectstatic --noinput
 
 EXPOSE 8000
 
