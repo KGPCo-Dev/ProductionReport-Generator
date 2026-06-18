@@ -2,7 +2,7 @@ name: Report-Generator Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: ["Apache-SetUp"]
 
 jobs:
   build-and-test:
@@ -48,7 +48,8 @@ jobs:
       - name: Update and Start Localy
 
         run: |
-          cd C:\Software\ProductionReport-Generator
-          docker compose pull
-          docker compose up -d
+          cd C:\KGP-System\ProductionReport-Generator
+          git pull origin Apache-SetUp
+          podman rm -f django_web
+          podman run -d --name django_web --network kgp-net --env-file production_report\.env -e ALLOWED_HOSTS="localhost,127.0.0.1,django_web" kgp_django_image
 
