@@ -292,9 +292,9 @@ class KgpEmployees(models.Model):
 class QualityAuditors(models.Model):
     id = models.BigAutoField(primary_key=True)
     employee_number = models.OneToOneField(KgpEmployees, models.DO_NOTHING, db_column='employee_number')
-    employee_name = models.CharField(blank=True, null=True)
+    employee_name = models.CharField(blank=True, null=True, max_length=150)
     shift = models.BigIntegerField(blank=True, null=True)
-    supervisor = models.CharField(blank=True, null=True)
+    supervisor = models.CharField(blank=True, null=True, max_length=150)
 
     class Meta:
         managed = False
