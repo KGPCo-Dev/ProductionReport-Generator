@@ -23,23 +23,24 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-^xtffyt0m#ptf63))fiq6^d0#=
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-def show_toolbar(request):
-    return DEBUG
-
-DEBUG_TOOLBAR_CONFIG = { 
-    "SHOW_TOOLBAR_CALLBACK": show_toolbar,
-}
-
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    '10.50.60.171',
     os.getenv('DJANGO_ALLOWED_HOST', 'tu-app.kgpco.com')
+]
+
+INTERNAL_IPS = [
+    "127.0.0.1",
 ]
 
 if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
+    # Solo forzar SSL si estamos en un entorno de producción real (no en runserver)
+    # Esta variable la estableceremos en nuestro entorno de despliegue (ej. Docker/Podman)
+    if os.getenv('DJANGO_ENV') == 'production':
+        SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host != 'localhost']
@@ -57,7 +58,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Development tools
-    'debug_toolbar',
     'django_bootstrap5',
     'rest_framework',
     'rest_framework.authtoken',
@@ -79,7 +79,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -181,8 +180,8 @@ REST_FRAMEWORK = {
 SITE_ID = 1
 
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 AUTHENTICATION_BACKENDS = [
