@@ -730,6 +730,7 @@ class KgpSubassemblyResults(models.Model):
     updated_date = models.TextField(blank=True, null=True)
     scrap = models.BooleanField(blank=True, null=True)
     status = models.ForeignKey(KgpOrdersStatus, models.DO_NOTHING, blank=True, null=True)
+    kit_delivered_date = models.DateTimeField()
 
     class Meta:
         managed = False

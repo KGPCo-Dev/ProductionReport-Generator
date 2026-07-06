@@ -84,7 +84,7 @@ def get_subassemble_table():
   
   subassembly_subquery = KgpSubassemblyResults.objects.filter(
     build_id=OuterRef('build')
-  ).order_by('-id').values('status__status_description_spanish')[:1]
+  ).exclude(status_id = 9).order_by('-id').values('status__status_description_spanish')[:1]
 
   orders_data = (
     KgpProductionOrders.objects.annotate(
@@ -92,7 +92,8 @@ def get_subassemble_table():
       sub_status=Subquery(subassembly_subquery),
       order=F('build')
     )
-    .filter(cutting_status__isnull=False)
+    .filter(cutting_status__isnull=False,
+            sub_status__isnull=False)
     .values(
       'order',
       'cutting_status',
