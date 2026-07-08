@@ -82,18 +82,25 @@ def get_subassemble_table():
     )
   ).order_by('status_priority', 'stack_id').values('status__status_description_spanish')[:1]
   
+  # Subconsulta para obtener el estado actual de sub-ensamble (excluyendo los ya entregados)
   subassembly_subquery = KgpSubassemblyResults.objects.filter(
     build_id=OuterRef('build')
-  ).exclude(status_id = 9).order_by('-id').values('status__status_description_spanish')[:1]
+  ).exclude(kit_delivered=True).order_by('-id').values('status__status_description_spanish')[:1]
+
+  # Subconsulta para verificar si el kit ya fue entregado.
+  kit_delivered_subquery = KgpSubassemblyResults.objects.filter(
+      build_id=OuterRef('build'),
+      kit_delivered=True
+  )
 
   orders_data = (
     KgpProductionOrders.objects.annotate(
       cutting_status=Subquery(cutting_subquery),
       sub_status=Subquery(subassembly_subquery),
-      order=F('build')
+      order=F('build'),
+      is_kit_delivered=Subquery(kit_delivered_subquery.values('id')[:1])
     )
-    .filter(cutting_status__isnull=False,
-            sub_status__isnull=False)
+    .filter(cutting_status__isnull=False, is_kit_delivered__isnull=True)
     .values(
       'order',
       'cutting_status',
