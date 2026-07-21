@@ -81,13 +81,16 @@ def get_subassemble_table():
       output_field=IntegerField(),
     )
   ).order_by('status_priority', 'stack_id').values('status__status_description_spanish')[:1]
+
+  cutting_wip_area_subquery = KgpCuttingResults.objects.filter(
+    build_id=OuterRef('build'),
+    status_id__in=[3, 4]
+  ).order_by('-entered_date').values('cutting_wip_area__cutting_wip_code')[:1]
   
-  # Subconsulta para obtener el estado actual de sub-ensamble (excluyendo los ya entregados)
   subassembly_subquery = KgpSubassemblyResults.objects.filter(
     build_id=OuterRef('build')
   ).exclude(kit_delivered=True).order_by('-id').values('status__status_description_spanish')[:1]
 
-  # Subconsulta para verificar si el kit ya fue entregado.
   kit_delivered_subquery = KgpSubassemblyResults.objects.filter(
       build_id=OuterRef('build'),
       kit_delivered=True
@@ -97,6 +100,7 @@ def get_subassemble_table():
     KgpProductionOrders.objects.annotate(
       cutting_status=Subquery(cutting_subquery),
       sub_status=Subquery(subassembly_subquery),
+      cutting_wip_code=Subquery(cutting_wip_area_subquery),
       order=F('build'),
       is_kit_delivered=Subquery(kit_delivered_subquery.values('id')[:1])
     )
@@ -105,6 +109,7 @@ def get_subassemble_table():
       'order',
       'cutting_status',
       'sub_status',
+      'cutting_wip_code',
       'cable_type',
       'tethers'
     )
