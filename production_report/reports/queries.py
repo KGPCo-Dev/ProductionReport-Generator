@@ -17,7 +17,7 @@ def get_single_order_test2_results(build_id):
     workplace__isnull=True
   ).exclude(
     workplace__exact=''
-  ).select_related('build')
+  ).select_related('build').order_by('entered_date')
 
 def get_single_order_cutting_results(build_id):
   return KgpCuttingResults.objects.filter(
