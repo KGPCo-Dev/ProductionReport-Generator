@@ -27,6 +27,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '10.50.60.171',
+    '172.26.60.62',
     os.getenv('DJANGO_ALLOWED_HOST', 'tu-app.kgpco.com')
 ]
 
