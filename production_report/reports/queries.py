@@ -19,6 +19,12 @@ def get_single_order_test2_results(build_id):
     workplace__exact=''
   ).select_related('build').order_by('entered_date')
 
+def get_single_order_last_test2_status(build_id):
+  return KgpTest2Results.objects.filter(
+    build=build_id
+  ).order_by(
+    '-entered_date').first()
+
 def get_single_order_cutting_results(build_id):
   return KgpCuttingResults.objects.filter(
     build = build_id,

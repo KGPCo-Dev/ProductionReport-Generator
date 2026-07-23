@@ -2,8 +2,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
-from django.db.models import Max
-from reports.queries import get_cutting_machines, get_order_details, get_order_planning_details, count_registered_orders, get_single_order_cutting_results
+from django.db.models import Max, Q
+from reports.queries import get_cutting_machines, get_order_details, get_order_planning_details, count_registered_orders, get_single_order_cutting_results, get_single_order_last_test2_status
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
 import json
 
@@ -45,12 +45,20 @@ def get_requested_order(request):
 
     existing_assignation = get_single_order_cutting_results(build_id).exists()
 
+    # 1. Validar si la orden ya está en una cola de corte o en proceso de corte.
     if existing_assignation:
-
         return JsonResponse({
             'success': False, 'error': 'Esta Orden ya se encuentra asignada a una maquina'
         }, status=400)
     
+    # 2. Validar el estatus más reciente en el piso de producción (Test 2).
+    last_prod_status = get_single_order_last_test2_status(build_id)
+    if last_prod_status and last_prod_status.result_status != 'Scrap':
+        return JsonResponse({
+            'success': False,
+            'error': f'La orden ya está en producción o terminada. Solo órdenes en "Scrap" pueden re-asignarse.'
+        }, status=400)
+
 
     planning_details = get_order_planning_details(build_id)
     priority_id = planning_details.priority if planning_details else 0

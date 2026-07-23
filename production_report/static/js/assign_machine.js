@@ -24,38 +24,6 @@ searchBar.addEventListener('submit', (event) => {
         document.getElementById("search-result-container").style.display = "block";
     }
 
-   
-    // if (!buildId) {
-    //     return;
-    // }
-
-    // try {
-    //     const response = await fetch(`/cutting-machine-assignation/api/search-order/?build_id=${encodeURIComponent(buildId)}`);
-    //     const data = await response.json();
-
-    //     if (!response.ok) {
-    //         console.log("Response was not ok");
-    //         throw new Error(data.error);
-    //     }
-
-    //     console.log("Datos de la orden recibidos");
-
-    //     // ----Data is prepared to be displayed in FrontEnd---- //
-
-    //     currentSearchedOrder = data;
-    //     document.getElementById("current-build-id").textContent = data.build_id;
-    //     document.getElementById("current-cable-type").textContent = data.cable_length;
-
-    //     const lengthElem = document.getElementById("current-cable-length");
-    //     if (lengthElem) {
-    //         lengthElem.textContent = data.cable_length + 'ft';
-    //     }
-
-    // } catch (error) {
-    //     console.error("Error", error.message);
-    //     Swal.fire('Atencion', error.message, 'warning');
-    // }
-
 });
 
 document.querySelector("#order-search-form").addEventListener('submit', async (event) => {
