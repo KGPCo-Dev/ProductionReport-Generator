@@ -5,6 +5,8 @@ from reports.models import (KgpTest2Results, KgpFinaltestResults, KgpProductionO
                             KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, 
                             KgpCuttingResults, KgpSubassemblyResults)
 from core.utils.db_utils import clear_date
+from django.utils import timezone
+from datetime import datetime, timedelta
 from django.db.models import F
 import pandas as pd
 
@@ -185,18 +187,18 @@ def get_process_results(build_id):
 
 def get_scrap_report_data(start_date_str, end_date_str, shift=""):
 
-  start_date = clear_date(start_date_str)
-  end_date = clear_date(end_date_str)
+  start_date_obj = clear_date(start_date_str)
+  end_date_obj = clear_date(end_date_str)
 
-  if start_date is None or end_date is None:
-    return []
-  
-  start_date = start_date + timedelta(hours=7)
-  end_date = end_date + timedelta(days=1, hours=7)
+  if start_date_obj is None or end_date_obj is None:
+      return []
+
+  start_datetime = datetime.combine(start_date_obj, datetime.min.time()).replace(hour=1)
+  end_datetime = datetime.combine(end_date_obj + timedelta(days=1), datetime.min.time()).replace(hour=1)
 
   queryset = KgpTest2Results.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date,
+    entered_date__gte=start_datetime,
+    entered_date__lt=end_datetime,
     result_status='Scrap'
   ).select_related('build')
 
@@ -207,13 +209,14 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
   days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
   for row in queryset:
-    production_date = row.entered_date - timedelta(hours=7)
+    supabase_date = row.entered_date
+    production_date = supabase_date - timedelta(hours=7)
 
     data.append({
       "Orden": row.build.build if row.build else "-",
       "Fecha de Registro": row.entered_date.strftime('%Y-%m-%d'),
       "Hora de Registro": row.entered_date.strftime('%H:%M'),
-      "Dia": days[production_date.weekday()],
+      "Dia de Scrap": days[production_date.weekday()],
       "Fecha de Incidencia": production_date.strftime('%Y-%m-%d'),
       "Tipo de Cable": row.build.cable_type if row.build else "-",
       "Empleado": row.employee_number if row.employee_number else "-",
@@ -224,63 +227,69 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
   return data
 
 def get_production_report_date(start_date_str, end_date_str, shift=""):
+    start_date_obj = clear_date(start_date_str)
+    end_date_obj = clear_date(end_date_str)
 
-  start_date = clear_date(start_date_str)
-  end_date = clear_date(end_date_str)
+    if start_date_obj is None or end_date_obj is None:
+        return []
 
-  if start_date is None or end_date is None:
-    return []
-  
-  start_date = start_date + timedelta(hours=7)
-  end_date = end_date + timedelta(days=1, hours=7)
+    start_datetime = datetime.combine(start_date_obj, datetime.min.time()).replace(hour=1)
+    end_datetime = datetime.combine(end_date_obj + timedelta(days=1), datetime.min.time()).replace(hour=1)
 
-  queryset = KgpTest2Results.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date,
-  ).exclude(
-    workplace__isnull=True
-  ).exclude(
-    workplace__exact=""
-  ).exclude(
-    production_cell__isnull=True
-  ).exclude(
-    result_status='Rework'
-  ).select_related('build').order_by('-entered_date')
+    queryset = KgpTest2Results.objects.filter(
+        entered_date__gte=start_datetime,
+        entered_date__lt=end_datetime,
+    ).exclude(
+        workplace__isnull=True
+    ).exclude(
+        workplace__exact=""
+    ).exclude(
+        production_cell__isnull=True
+    ).exclude(
+        result_status='Rework'
+    ).exclude(
+        result_status='Scrap'
+    ).select_related('build').order_by('-entered_date')
 
-  if shift in ['1', '2']:
-    queryset = queryset.filter(production_shift=int(shift))
+    if shift in ['1', '2']:
+        queryset = queryset.filter(production_shift=int(shift))
 
-  data=[]
-  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    data = []
+    days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
-  for row in queryset:
-    production_date = row.entered_date - timedelta(hours=7)
-    data.append({
-      "Orden": row.build.build if row.build.build else "-",
-      "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
-      "Hora de Registro": row.entered_date.strftime("%H:%M"),
-      "Dia de Produccion": days[production_date.weekday()],
-      "Tipo de Cable": row.build.cable_type if row.build else "-",
-      "Empleado": row.employee_number if row.employee_number else "-" ,
-      "Estacion":row.workplace if row.workplace else "-",
-      "Celda": row.production_cell if row.production_cell else "-",
-      "Turno": row.production_shift if row.production_shift else "-"
-    })
-  return data
+    for row in queryset:
+
+        supabase_date = row.entered_date
+        production_date = supabase_date - timedelta(hours=7)
+
+        data.append({
+            "Orden": row.build.build if row.build and row.build.build else "-",
+            "Fecha de Registro": supabase_date.strftime("%Y-%m-%d"),
+            "Hora de Registro": supabase_date.strftime("%H:%M"),
+            "Dia de Produccion": days[production_date.weekday()],
+            "Tipo de Cable": row.build.cable_type if row.build else "-",
+            "Empleado": row.employee_number if row.employee_number else "-",
+            "Estacion": row.workplace if row.workplace else "-",
+            "Celda": row.production_cell if row.production_cell else "-",
+            "Turno": row.production_shift if row.production_shift else "-"
+        })
+
+    return data
 
 def get_fibers_report_date(start_date_str, end_date_str, shift=""):
-  start_date = clear_date(start_date_str)
-  end_date = clear_date(end_date_str)
 
-  if start_date is None or end_date is None:
-    return []
-  
-  start_date = start_date + timedelta(hours=7)
-  end_date = end_date + timedelta(days=1, hours=7)
+  start_date_obj = clear_date(start_date_str)
+  end_date_obj = clear_date(end_date_str)
+
+  if start_date_obj is None or end_date_obj is None:
+      return []
+
+  start_datetime = datetime.combine(start_date_obj, datetime.min.time()).replace(hour=1)
+  end_datetime = datetime.combine(end_date_obj + timedelta(days=1), datetime.min.time()).replace(hour=1)
 
   queryset = KgpFinaltestResults.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date
+    entered_date__gte=start_datetime,
+    entered_date__lt=end_datetime
   ).exclude(
     workplace__isnull=True,
     workplace__exact=""
@@ -293,6 +302,8 @@ def get_fibers_report_date(start_date_str, end_date_str, shift=""):
   days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
   for row in queryset:
+    supabase_date = row.entered_date
+    production_date = supabase_date - timedelta(hours=7)
     passed_fibers = row.passed_fibers or 0
     failed_fibers = row.failed_fibers or 0
     done_fibers = failed_fibers +passed_fibers
@@ -302,6 +313,7 @@ def get_fibers_report_date(start_date_str, end_date_str, shift=""):
       "Empleado": row.employee_number if row.employee_number else "-",
       "Mesa": row.workplace if row.workplace else "-",
       "Turno": row.production_shift if row.production_shift else "-",
+      "Dia de Produccion": days[production_date.weekday()],
       "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
       "Hora de Registro": row.entered_date.strftime("%H:%M"),
       "Fibras Totales": row.build.fiber_count if row.build.fiber_count else "-",
@@ -318,7 +330,7 @@ REPORT_CONFIG = {
         'filename': 'Reporte de Scrap',
         'sheet_name': 'Scrap',
         'chart_config': { 
-            'date_col': 'Fecha del Scrap',
+            'date_col': 'Dia de Scrap',
             'hour_col': 'Hora',
             'label': 'Ordenes Scrap',
             'base_color': '#da1d1df1',
@@ -331,7 +343,7 @@ REPORT_CONFIG = {
         'filename': 'Reporte Final Test',
         'sheet_name': 'Final Test',
         'chart_config': { 
-            'date_col': 'Fecha de Registro',
+            'date_col': 'Dia de Produccion',
             'hour_col': 'Hora',
             'label': 'Fibras',
             'base_color': '#29b457cb',
@@ -344,7 +356,7 @@ REPORT_CONFIG = {
         'filename': 'Reporte de Produccion',
         'sheet_name': 'Produccion',
         'chart_config': { 
-            'date_col': 'Fecha de Registro',
+            'date_col': 'Dia de Produccion',
             'hour_col': 'Hora',
             'label': 'Tethers Producidos',
             'base_color': '#0d6efd',

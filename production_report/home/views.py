@@ -34,13 +34,8 @@ def count_production_data(fetch_function, topic_str):
     last_week_start = current_week_start - timedelta(days=7)
     last_week_end = current_date - timedelta(days=7)
 
-    start_last_week = last_week_start.replace(tzinfo=None)
-    end_last_week = last_week_end.replace(tzinfo=None)
-    start_current_week = current_week_start.replace(tzinfo=None)
-    end_current_week = current_date.replace(tzinfo=None)
-
-    last_week_results = int(fetch_function(start_last_week, end_last_week).count())
-    current_week_results = int(fetch_function(start_current_week, end_current_week).count())
+    last_week_results = int(fetch_function(last_week_start, last_week_end).count())
+    current_week_results = int(fetch_function(current_week_start, current_date).count())
 
 
     change = current_week_results - last_week_results
