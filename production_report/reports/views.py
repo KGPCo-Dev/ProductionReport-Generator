@@ -62,8 +62,15 @@ def production_report_view(request):
                         group_col = date_col
                     
                     if group_col in results_df.columns:
-                        graph_df = results_df.groupby(group_col).size().reset_index(name='Amount')
-                        graph_df = graph_df.sort_values(by=group_col)
+                        # Agrupamos por la etiqueta y por el objeto de fecha para conservarlo
+                        group_cols = [group_col]
+                        sort_col = group_col
+                        if 'production_date_obj' in results_df.columns:
+                            group_cols.append('production_date_obj')
+                            sort_col = 'production_date_obj'
+
+                        graph_df = results_df.groupby(group_cols).size().reset_index(name='Amount')
+                        graph_df = graph_df.sort_values(by=sort_col)
 
                         chart_labels = graph_df[group_col].astype(str).to_list()
                         chart_values = graph_df['Amount'].to_list()
@@ -81,6 +88,13 @@ def production_report_view(request):
                 return export_to_excel(results, headers, config['filename'], config['sheet_name'])
 
             hour_col_name = config.get('chart_config', {}).get('hour_col')
+
+            # Eliminar la columna de fecha objeto para que no aparezca en la tabla
+            if 'production_date_obj' in headers:
+                headers.remove('production_date_obj')
+                for row in results:
+                    if 'production_date_obj' in row:
+                        del row['production_date_obj']
 
             if hour_col_name and headers and results:
                 if hour_col_name in headers:
@@ -108,12 +122,20 @@ def export_to_excel(data, headers, filename_prefix="Reporte", sheet_name="Result
     if not data or not headers:
         return HttpResponse("No hay datos para exportar")
 
+    # Eliminar la columna 'production_date_obj' de los encabezados para que no se exporte
+    if 'production_date_obj' in headers:
+        headers.remove('production_date_obj')
+
     headers.append("Tethers")
     for result in data:
         result['Tethers'] = 1
 
+    # Generar un timestamp para asegurar un nombre de archivo único
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"{filename_prefix.replace(' ', '_')}_{timestamp}.xlsx"
+
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="{filename_prefix}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     wb = openpyxl.Workbook()
     ws = wb.active
