@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class ProcessNames(models.TextChoices):
     ACCESS_1 = 'ACCESS_1', 'Access 1'
@@ -694,7 +695,7 @@ class KgpSubassembleKitResults(models.Model):
 class KgpCuttingResults(models.Model):
     id = models.BigAutoField(primary_key=True)
     build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build', db_column='build_id')
-    entered_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    entered_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
     machine = models.ForeignKey('KgpCuttingMachines', models.DO_NOTHING, blank=True, null=True)
     master_reel = models.TextField(blank=True, null=True)
     status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True)

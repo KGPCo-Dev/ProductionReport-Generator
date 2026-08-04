@@ -15,7 +15,7 @@
 
                 <tbody>
                     {% for row in results %}
-                        <tr>
+                        <tr id="order-row-{{ row.order }}" data-order-id="{{ row.order }}">
                             <td class="px-4 py-3 text-dark table-cell-lg" style="font-size:20px;">{{ row.order|default:"-" }}</td>
                             <td class="px-4 py-3 text-secondary table-cell-sm">{{ row.cable_type|default:"-" }}</td>
                             <td class="px-4 py-3 text-dark fw-semibold table-cell-sm">{{ row.tethers|default:"-" }}</td>
@@ -100,3 +100,41 @@
 
         </div>
     </div>
+
+    <style>
+        @keyframes fillBackground {
+            from {
+                background-size: 0% 100%;
+            }
+            to {
+                background-size: 100% 100%;
+            }
+        }
+
+        @keyframes fadeToYellow {
+            from {
+                background-color: transparent;
+            }
+            to {
+                background-color: #fffbeb; /* Amarillo suave */
+            }
+        }
+
+        /* En lugar de aplicar estilos a la fila, los aplicamos a las celdas (td) */
+        .row-pending-deletion td {
+            position: relative; /* Necesario para el posicionamiento del pseudo-elemento */
+            /* Animación para el color de fondo */
+            animation: fadeToYellow 0.5s ease-out forwards;
+        }
+
+        /* El pseudo-elemento ahora se aplica a cada celda */
+        .row-pending-deletion td::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(to right, #fef3c7, #fef3c7); /* Amarillo un poco más oscuro */
+            background-repeat: no-repeat;
+            animation: fillBackground var(--deletion-grace-period, 30s) linear forwards;
+            z-index: -1; /* Coloca el fondo de carga detrás del contenido de la celda */
+        }
+    </style>

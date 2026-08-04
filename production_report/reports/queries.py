@@ -9,6 +9,8 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from django.db.models import F
 import pandas as pd
+from django.db.models import Exists, OuterRef, Subquery, F
+from django.db.models.functions import Coalesce
 
 def get_single_order_test2_results(build_id):
   return KgpTest2Results.objects.filter(
@@ -79,50 +81,55 @@ def get_machines_status():
   )
 
 def get_subassemble_table():
-  cutting_subquery = KgpCuttingResults.objects.filter(
-    build_id= OuterRef('build'),
-    status_id__in =[3, 4]
-  ).annotate(
-    status_priority=Case(
-      When(status_id=3, then=Value(0)),
-      default=Value(1),
-      output_field=IntegerField(),
+    # 1. Subconsulta para Corte: tomamos la orden con mayor prioridad (status_id 3 > 4)
+    # DISTINCT ON (build_id) selecciona la primera fila del orden especificado
+    relevant_cutting = (
+        KgpCuttingResults.objects.filter(
+            build_id=OuterRef('build'),
+            status_id__in=[3, 4]
+        )
+        .order_by('build_id', 'status_id', 'stack_id')  # 3 va antes que 4
     )
-  ).order_by('status_priority', 'stack_id').values('status__status_description_spanish')[:1]
 
-  cutting_wip_area_subquery = KgpCuttingResults.objects.filter(
-    build_id=OuterRef('build'),
-    status_id__in=[3, 4]
-  ).order_by('-entered_date').values('cutting_wip_area__cutting_wip_code')[:1]
-  
-  subassembly_subquery = KgpSubassemblyResults.objects.filter(
-    build_id=OuterRef('build')
-  ).exclude(kit_delivered=True).order_by('-id').values('status__status_description_spanish')[:1]
-
-  kit_delivered_subquery = KgpSubassemblyResults.objects.filter(
-      build_id=OuterRef('build'),
-      kit_delivered=True
-  )
-
-  orders_data = (
-    KgpProductionOrders.objects.annotate(
-      cutting_status=Subquery(cutting_subquery),
-      sub_status=Subquery(subassembly_subquery),
-      cutting_wip_code=Subquery(cutting_wip_area_subquery),
-      order=F('build'),
-      is_kit_delivered=Subquery(kit_delivered_subquery.values('id')[:1])
+    # 2. Subconsulta para Subensamble: tomamos el registro más reciente (último id)
+    latest_subassembly = (
+        KgpSubassemblyResults.objects.filter(
+            build_id=OuterRef('build'),
+            kit_delivered=False
+        )
+        .order_by('-id')
     )
-    .filter(cutting_status__isnull=False, is_kit_delivered__isnull=True)
-    .values(
-      'order',
-      'cutting_status',
-      'sub_status',
-      'cutting_wip_code',
-      'cable_type',
-      'tethers'
+
+    # 3. Subconsulta booleana ultra rápida para verificar si se entregó el kit
+    kit_delivered_exists = KgpSubassemblyResults.objects.filter(
+        build_id=OuterRef('build'),
+        kit_delivered=True
     )
-  )
-  return list(orders_data)
+
+    # 4. Consulta Principal (Limpia y Ejecutada en 1 sola consulta SQL)
+    orders_data = (
+        KgpProductionOrders.objects.annotate(
+            cutting_status=Subquery(relevant_cutting.values('status__status_description_spanish')[:1]),
+            cutting_wip_code=Subquery(relevant_cutting.values('cutting_wip_area__cutting_wip_code')[:1]),
+            sub_status=Subquery(latest_subassembly.values('status__status_description_spanish')[:1]),
+            has_kit_delivered=Exists(kit_delivered_exists)
+        )
+        .filter(
+            cutting_status__isnull=False,  # Tiene registro válido en corte
+            has_kit_delivered=False        # El kit NO ha sido entregado
+        )
+        .values(
+            'build', 
+            'cable_type', 
+            'tethers', 
+            'cutting_status', 
+            'sub_status', 
+            'cutting_wip_code'
+        )
+        .annotate(order=F('build'))
+    )
+
+    return list(orders_data)
 
 def get_test2_results(start_date, end_date):
   return KgpTest2Results.objects.filter(

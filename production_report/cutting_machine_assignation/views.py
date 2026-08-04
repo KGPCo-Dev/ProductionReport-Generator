@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.db.models import Max, Q
+from django.utils import timezone
 from reports.queries import get_cutting_machines, get_order_details, get_order_planning_details, count_registered_orders, get_single_order_cutting_results, get_single_order_last_test2_status
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
 import json
@@ -86,6 +87,7 @@ def get_requested_order(request):
 
 @login_required
 def save_machine_assignation(request):
+    # No es necesario definir la fecha aquí, la obtendremos dentro del bucle para mayor precisión.
 
     if not is_cutting_lead(request.user):
         return JsonResponse({
@@ -131,6 +133,7 @@ def save_machine_assignation(request):
                     results_to_create.append(
                         KgpCuttingResults(
                             build_id=order_data.get('build_id'),
+                            entered_date = timezone.now(),
                             machine=machine_instance,
                             master_reel=order_data.get('master_reel'),
                             status=queue_status,
