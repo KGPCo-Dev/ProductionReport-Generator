@@ -4,7 +4,7 @@ from django.db.models.expressions import RawSQL
 from reports.models import (KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, 
                             KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, 
                             KgpCuttingResults, KgpSubassemblyResults)
-from core.utils.db_utils import clear_date
+from core.utils.db_utils import date_report_formatting, clear_date
 from django.utils import timezone
 from datetime import datetime, timedelta
 from django.db.models import F
@@ -194,14 +194,7 @@ def get_process_results(build_id):
 
 def get_scrap_report_data(start_date_str, end_date_str, shift=""):
 
-  start_date_obj = clear_date(start_date_str)
-  end_date_obj = clear_date(end_date_str)
-
-  if start_date_obj is None or end_date_obj is None:
-      return []
-
-  start_datetime = datetime.combine(start_date_obj, datetime.min.time()).replace(hour=1)
-  end_datetime = datetime.combine(end_date_obj + timedelta(days=1), datetime.min.time()).replace(hour=1)
+  start_datetime, end_datetime = date_report_formatting(start_date_str, end_date_str)
 
   queryset = KgpTest2Results.objects.filter(
     entered_date__gte=start_datetime,
@@ -235,14 +228,8 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
   return data
 
 def get_production_report_date(start_date_str, end_date_str, shift=""):
-    start_date_obj = clear_date(start_date_str)
-    end_date_obj = clear_date(end_date_str)
-
-    if start_date_obj is None or end_date_obj is None:
-        return []
-
-    start_datetime = datetime.combine(start_date_obj, datetime.min.time()).replace(hour=1)
-    end_datetime = datetime.combine(end_date_obj + timedelta(days=1), datetime.min.time()).replace(hour=1)
+    
+    start_datetime, end_datetime = date_report_formatting(start_date_str, end_date_str)
 
     queryset = KgpTest2Results.objects.filter(
         entered_date__gte=start_datetime,
@@ -287,15 +274,8 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
 
 def get_fibers_report_date(start_date_str, end_date_str, shift=""):
 
-  start_date_obj = clear_date(start_date_str)
-  end_date_obj = clear_date(end_date_str)
-
-  if start_date_obj is None or end_date_obj is None:
-      return []
-
-  start_datetime = datetime.combine(start_date_obj, datetime.min.time()).replace(hour=1)
-  end_datetime = datetime.combine(end_date_obj + timedelta(days=1), datetime.min.time()).replace(hour=1)
-
+  start_datetime, end_datetime = date_report_formatting(start_date_str, end_date_str)
+  
   queryset = KgpFinaltestResults.objects.filter(
     entered_date__gte=start_datetime,
     entered_date__lt=end_datetime

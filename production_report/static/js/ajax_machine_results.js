@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Objeto para gestionar las órdenes que están en su "periodo de gracia" antes de ser eliminadas.
     // Formato: { "orderId": { timer: setTimeout_id, element: rowElement } }
     const pendingDeletion = {};
-    const DELETION_GRACE_PERIOD = 30000; // 30 segundos en milisegundos. ¡Ajusta este valor!
+    const DELETION_GRACE_PERIOD = 120000; // 30 segundos en milisegundos. ¡Ajusta este valor!
 
     function updateTable() {
         const tableType = tableTypeSelect.value;
