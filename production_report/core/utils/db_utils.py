@@ -38,13 +38,12 @@ def date_report_formatting(start_date_str, end_date_str):
     print(f'End cleared date: ${end_date_obj}')
 
     start_datetime = datetime.combine(
-        start_date_obj, datetime.min.time().replace(hour=7)
+        start_date_obj, datetime.min.time().replace(hour=1)
         )
     
     end_datetime = datetime.combine(
         end_date_obj + timedelta(days=1), datetime.min.time()
-        ).replace(hour=7)
-
+        ).replace(hour=1)
     print(f'FUNC: Hora inicio que se manda para reporte: ${start_datetime}')
     print(f'FUNC: Hora final que se manda para reporte: ${end_datetime}')
     print(f'FUNC: Hora en django: ${timezone.now()}')

@@ -6,11 +6,20 @@ from reports.models import (KgpTest2Results, KgpFinaltestResults, KgpProductionO
                             KgpCuttingResults, KgpSubassemblyResults)
 from core.utils.db_utils import date_report_formatting, clear_date
 from django.utils import timezone
+from django.db.models import Func, DateTimeField
 from datetime import datetime, timedelta
 from django.db.models import F
 import pandas as pd
 from django.db.models import Exists, OuterRef, Subquery, F
 from django.db.models.functions import Coalesce
+
+class AtTimeZone(Func):
+    """THIS SHOULD NOT BE THE CASE BUT I WANNA SLEEP"""
+    function = 'AT TIME ZONE'
+    template = "%(expressions)s %(function)s '%(zone)s'"
+
+    def __init__(self, expression, zone, **extra):
+        super().__init__(expression, zone=zone, output_field=DateTimeField(), **extra)
 
 def get_single_order_test2_results(build_id):
   return KgpTest2Results.objects.filter(
@@ -200,7 +209,9 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
     entered_date__gte=start_datetime,
     entered_date__lt=end_datetime,
     result_status='Scrap'
-  ).select_related('build')
+  ).annotate(
+      raw_entered=AtTimeZone('entered_date', 'UTC')
+    ).select_related('build')
 
   if shift in ['1', '2']:
     queryset = queryset.filter(production_shift=int(shift))
@@ -209,13 +220,13 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
   days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
   for row in queryset:
-    supabase_date = row.entered_date
-    production_date = supabase_date - timedelta(hours=7)
+    supabase_date = row.raw_entered
+    production_date = supabase_date - timedelta(hours=1)
 
     data.append({
       "Orden": row.build.build if row.build else "-",
-      "Fecha de Registro": row.entered_date.strftime('%Y-%m-%d'),
-      "Hora de Registro": row.entered_date.strftime('%H:%M'),
+      "Fecha de Registro": supabase_date.strftime('%Y-%m-%d'),
+      "Hora de Registro": supabase_date.strftime('%H:%M'),
       "Dia de Scrap": f"{days[production_date.weekday()]} {production_date.strftime('%d/%m')}",
       "Fecha de Incidencia": production_date.strftime('%Y-%m-%d'),
       "production_date_obj": production_date.date(),
@@ -244,6 +255,8 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
         result_status='Rework'
     ).exclude(
         result_status='Scrap'
+    ).annotate(
+      raw_entered=AtTimeZone('entered_date', 'UTC')
     ).select_related('build').order_by('-entered_date')
 
     if shift in ['1', '2']:
@@ -254,8 +267,8 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
 
     for row in queryset:
 
-        supabase_date = row.entered_date
-        production_date = supabase_date - timedelta(hours=7)
+        supabase_date = row.raw_entered
+        production_date = supabase_date - timedelta(hours=1)
 
         data.append({
             "Orden": row.build.build if row.build and row.build.build else "-",
@@ -282,7 +295,9 @@ def get_fibers_report_date(start_date_str, end_date_str, shift=""):
   ).exclude(
     workplace__isnull=True,
     workplace__exact=""
-  ).select_related('build')
+  ).annotate(
+      raw_entered=AtTimeZone('entered_date', 'UTC')
+    ).select_related('build')
 
   if shift in ['1', '2']:
     queryset= queryset.filter(production_shift=int(shift))
@@ -291,8 +306,8 @@ def get_fibers_report_date(start_date_str, end_date_str, shift=""):
   days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
   for row in queryset:
-    supabase_date = row.entered_date
-    production_date = supabase_date - timedelta(hours=7)
+    supabase_date = row.raw_entered
+    production_date = supabase_date - timedelta(hours=1)
     passed_fibers = row.passed_fibers or 0
     failed_fibers = row.failed_fibers or 0
     done_fibers = failed_fibers +passed_fibers
@@ -303,9 +318,9 @@ def get_fibers_report_date(start_date_str, end_date_str, shift=""):
       "Mesa": row.workplace if row.workplace else "-",
       "Turno": row.production_shift if row.production_shift else "-",
       "Dia de Produccion": f"{days[production_date.weekday()]} {production_date.strftime('%d/%m')}",
-      "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
+      "Fecha de Registro": supabase_date.strftime("%Y-%m-%d"),
       "production_date_obj": production_date.date(),
-      "Hora de Registro": row.entered_date.strftime("%H:%M"),
+      "Hora de Registro": supabase_date.strftime("%H:%M"),
       "Fibras Totales": row.build.fiber_count if row.build.fiber_count else "-",
       "Fibras Probadas": passed_fibers if passed_fibers else "-",
       "Fbras Fallidas": failed_fibers if failed_fibers else "-",
