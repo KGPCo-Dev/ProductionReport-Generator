@@ -6,7 +6,9 @@ from django.shortcuts import render
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from reports.models import ProcessNames
-from reports.queries import get_order_details, get_fails_results, get_process_results, get_single_order_test2_results, get_order_planning_details
+from reports.queries import get_order_details, get_fails_results, get_process_results
+from reports.test2_services import get_single_order_test2_results
+from reports.cutting_services import get_order_planning_details
 from django.db.models import F
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST

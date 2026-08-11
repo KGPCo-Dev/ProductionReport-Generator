@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
+from django.db.models import Func, DateTimeField
 from django.utils import timezone
 
 def dict_fetch_all(cursor):
@@ -16,6 +17,11 @@ def clear_date(date_str):
     except Exception as e:
         print(f"Fecha Invalida: {e}")
         return None
+
+def date_report_utc_formatting(start_date_str, end_date_str):
+    print(f'StartDate en UTC Formatting: {start_date_str}')
+    print(f'EndDate en UTC Formatting: {end_date_str}')
+    return None
 
 def date_report_formatting(start_date_str, end_date_str):
 
@@ -49,3 +55,11 @@ def date_report_formatting(start_date_str, end_date_str):
     print(f'FUNC: Hora en django: ${timezone.now()}')
 
     return (start_datetime, end_datetime)
+
+class AtTimeZone(Func):
+    """THIS SHOULD NOT BE THE CASE BUT I WANNA SLEEP"""
+    function = 'AT TIME ZONE'
+    template = "%(expressions)s %(function)s '%(zone)s'"
+
+    def __init__(self, expression, zone, **extra):
+        super().__init__(expression, zone=zone, output_field=DateTimeField(), **extra)

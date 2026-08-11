@@ -4,7 +4,8 @@ from datetime import date
 from django.contrib.auth.decorators import login_required
 from core.utils.db_utils import clear_date
 from django.shortcuts import render
-from reports.queries import get_test2_results, get_finaltest_results, get_scrap_results
+from reports.final_test_services import get_finaltest_results
+from reports.test2_services import get_test2_results, get_scrap_results
 
 @login_required
 def home_view(request):

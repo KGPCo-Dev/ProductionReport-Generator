@@ -6,7 +6,9 @@ from django.db.models import Max, Q
 from django.utils import timezone
 from datetime import timezone as py_tz
 import zoneinfo
-from reports.queries import get_cutting_machines, get_order_details, get_order_planning_details, count_registered_orders, get_single_order_cutting_results, get_single_order_last_test2_status
+from reports.queries import get_order_details
+from reports.cutting_services import get_single_order_cutting_results, get_cutting_machines, count_registered_orders, get_order_planning_details
+from reports.test2_services import get_single_order_last_test2_status
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
 import json
 
