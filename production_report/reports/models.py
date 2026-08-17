@@ -696,15 +696,23 @@ class KgpCuttingResults(models.Model):
     id = models.BigAutoField(primary_key=True)
     build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build', db_column='build_id')
     entered_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    employee_number = models.SmallIntegerField(blank=True, null=True)
     machine = models.ForeignKey('KgpCuttingMachines', models.DO_NOTHING, blank=True, null=True)
     master_reel = models.TextField(blank=True, null=True)
     status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True)
     scrap = models.BooleanField(blank=True, null=True)
     cutting_wip_area = models.ForeignKey('KgpCuttingWipAreas', models.DO_NOTHING, db_column='cutting_wip_area', blank=True, null=True)
     stack_id = models.SmallIntegerField(blank=True, null=True, db_column='stack_id')
+    start_shift = models.SmallIntegerField(blank=True, null=True)
+    assignation_shift = models.SmallIntegerField(blank=True, null=True) 
     production_shift = models.SmallIntegerField(blank=True, null=True)
+    start_feet = models.SmallIntegerField(blank=True, null=True)
+    finish_feet = models.SmallIntegerField(blank=True, null=True)
+    length_gap = models.TextField(blank=True, null=True)
     completed_date = models.DateTimeField(blank=True, null=True)
     has_master_reel = models.BooleanField()
+    start_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    finish_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
 
     class Meta:
         managed = False

@@ -125,10 +125,11 @@ def export_to_excel(data, headers, filename_prefix="Reporte", sheet_name="Result
     # Eliminar la columna 'production_date_obj' de los encabezados para que no se exporte
     if 'production_date_obj' in headers:
         headers.remove('production_date_obj')
-
-    headers.append("Tethers")
-    for result in data:
-        result['Tethers'] = 1
+    
+    if 'Reporte de Produccion' in filename_prefix:
+        headers.append("Tethers")
+        for result in data:
+            result['Tethers'] = 1
 
     # Generar un timestamp para asegurar un nombre de archivo único
     timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')

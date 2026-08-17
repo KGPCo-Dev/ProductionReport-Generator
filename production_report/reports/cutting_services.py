@@ -24,9 +24,61 @@ def get_cutting_report_date(start_date_str, end_date_str, shift=""):
 
   #---- This funciton gets cutting results ----#
   start_datetime, end_datetime = date_report_utc_formatting(start_date_str, end_date_str)
-  print(start_datetime)
-  print(end_datetime)
+
+  queryset = KgpCuttingResults.objects.filter(
+    entered_date__gte=start_datetime,
+    entered_date__lt=end_datetime
+  ).order_by('entered_date')
+
+  if shift in ['1', '2']:
+    queryset = queryset.filter(production_shift=int(shift))
+
   data = []
+
+  raw_data = queryset.values(
+    'build_id',
+    'entered_date',
+    'status__status_description_spanish',       # KgpOrdersStatus
+    'machine__machine_spanish_name',             # KgpCuttingMachines
+    'master_reel',
+    'employee_number',
+    'cutting_wip_area__cutting_wip_code',        # KgpCuttingWipAreas
+    'production_shift',
+    'start_feet',
+    'finish_feet',
+    'length_gap',
+    'start_date',
+    'finish_date',
+    'start_shift',
+    'assignation_shift'
+  )
+
+  for row in raw_data.iterator():
+
+    start_date = row['start_date'] if row['start_date'] else None
+    end_date = row['finish_date'] if row['finish_date'] else None
+    entered_date = row['entered_date'] if row['entered_date'] else None
+
+    data.append({
+      "Orden": row['build_id'] or "-",
+      "Fecha de Asignación": entered_date.strftime("%d/%m/%Y") if entered_date else "-",
+      "Hora de Asignación": entered_date.strftime("%H:%M:%S") if entered_date else "-",
+      "Turno de Asignación": row['assignation_shift'] or "-",
+      "Inicio de Corte": start_date.strftime("%d/%m/%Y") if start_date else "-",
+      "Hora Inicio Corte": end_date.strftime("%H:%M:%S") if end_date else "-",
+      "Turno de Inicio": row['start_shift'] or "-",
+      "Fecha Fin Corte": end_date.strftime("%d/%m/%Y") if end_date else "-",
+      "Hora Fin Corte": end_date.strftime("%H:%M:%S") if end_date else "-",
+      "Estatus": row['status__status_description_spanish'] or "-",
+      "Máquina": row['machine__machine_spanish_name'] or "-",
+      "Master Reel": row['master_reel'] or "-",
+      "Empleado": row['employee_number'] or "-",
+      "Area de WIP": row['cutting_wip_area__cutting_wip_code'] or "-",
+      "Turno de Corte": row['production_shift'] or "-",
+      "Pies Iniciales": row['start_feet'] if row['start_feet'] is not None else "-",
+      "Pies Finales": row['finish_feet'] if row['finish_feet'] is not None else "-",
+      "Desfase": row['length_gap'] or "-",
+    })
   return data
 
 def get_single_order_cutting_results(build_id):
