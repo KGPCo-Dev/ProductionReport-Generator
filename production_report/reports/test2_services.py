@@ -69,10 +69,10 @@ def get_scrap_report_data(start_date_str, end_date_str, shift=""):
 
     data.append({
       "Orden": row.build.build if row.build else "-",
-      "Fecha de Registro": supabase_date.strftime('%Y-%m-%d'),
+      "Fecha de Registro": supabase_date.strftime("%d/%m/%Y"),
       "Hora de Registro": supabase_date.strftime('%H:%M'),
       "Dia de Scrap": f"{days[production_date.weekday()]} {production_date.strftime('%d/%m')}",
-      "Fecha de Incidencia": production_date.strftime('%Y-%m-%d'),
+      "Fecha de Incidencia": production_date.strftime("%d/%m/%Y"),
       "production_date_obj": production_date.date(),
       "Tipo de Cable": row.build.cable_type if row.build else "-",
       "Empleado": row.employee_number if row.employee_number else "-",
@@ -116,7 +116,7 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
 
         data.append({
             "Orden": row.build.build if row.build and row.build.build else "-",
-            "Fecha de Registro": supabase_date.strftime("%Y-%m-%d"),
+            "Fecha de Registro": supabase_date.strftime("%d/%m/%Y"),
             "Hora de Registro": supabase_date.strftime("%H:%M"),
             "Dia de Produccion": f"{days[production_date.weekday()]} {production_date.strftime('%d/%m')}",
             "production_date_obj": production_date.date(),

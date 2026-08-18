@@ -1,6 +1,6 @@
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpPlanningOrders
 from django.db.models import (
-  Subquery, OuterRef, Case, Value, IntegerField, When, TextField, F
+  Subquery, OuterRef, Case, Value, IntegerField, When, TextField, F, Q
   )
 from core.utils.db_utils import date_report_utc_formatting, AtTimeZone
 
@@ -25,13 +25,22 @@ def get_cutting_report_date(start_date_str, end_date_str, shift=""):
   #---- This funciton gets cutting results ----#
   start_datetime, end_datetime = date_report_utc_formatting(start_date_str, end_date_str)
 
+  date_filter = (
+    Q(entered_date__gte=start_datetime, entered_date__lt=end_datetime) |
+    Q(start_date__gte=start_datetime, start_date__lt=end_datetime) |
+    Q(finish_date__gte=start_datetime, finish_date__lt=end_datetime)
+  )
   queryset = KgpCuttingResults.objects.filter(
-    entered_date__gte=start_datetime,
-    entered_date__lt=end_datetime
+    date_filter
   ).order_by('entered_date')
 
   if shift in ['1', '2']:
-    queryset = queryset.filter(production_shift=int(shift))
+    shift_int = int(shift)
+    queryset = queryset.filter(
+      Q(assignation_shift=shift_int) |
+      Q(start_shift=shift_int) |
+      Q(production_shift=shift_int)
+    )
 
   data = []
 
@@ -65,16 +74,16 @@ def get_cutting_report_date(start_date_str, end_date_str, shift=""):
       "Hora de Asignación": entered_date.strftime("%H:%M:%S") if entered_date else "-",
       "Turno de Asignación": row['assignation_shift'] or "-",
       "Inicio de Corte": start_date.strftime("%d/%m/%Y") if start_date else "-",
-      "Hora Inicio Corte": end_date.strftime("%H:%M:%S") if end_date else "-",
+      "Hora Inicio Corte": start_date.strftime("%H:%M:%S") if start_date else "-",
       "Turno de Inicio": row['start_shift'] or "-",
       "Fecha Fin Corte": end_date.strftime("%d/%m/%Y") if end_date else "-",
       "Hora Fin Corte": end_date.strftime("%H:%M:%S") if end_date else "-",
+      "Turno de Corte": row['production_shift'] or "-",
       "Estatus": row['status__status_description_spanish'] or "-",
       "Máquina": row['machine__machine_spanish_name'] or "-",
       "Master Reel": row['master_reel'] or "-",
       "Empleado": row['employee_number'] or "-",
       "Area de WIP": row['cutting_wip_area__cutting_wip_code'] or "-",
-      "Turno de Corte": row['production_shift'] or "-",
       "Pies Iniciales": row['start_feet'] if row['start_feet'] is not None else "-",
       "Pies Finales": row['finish_feet'] if row['finish_feet'] is not None else "-",
       "Desfase": row['length_gap'] or "-",
