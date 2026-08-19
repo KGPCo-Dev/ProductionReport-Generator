@@ -23,33 +23,21 @@
         </div>
 
         <!-- Input Oculto para conservar el valor seleccionado -->
-        <input type="hidden" name="cutting_machines" id="cutting_machines" value="{{ cutting_machines.0.machine_spanish_name }}">
+        <input type="hidden" name="cutting_machines" id="cutting_machines" value="">
 
         <!-- Contenedor Flex de Tarjetas de Máquinas -->
-        <div class="d-flex justify-content-center flex-wrap gap-3 mt-2">
-            {% for machine in cutting_machines %}
-                <div class="machine-card text-start {% if forloop.first %}active{% endif %}" 
-                     data-machine-code="{{ machine.machine_spanish_name }}" 
-                     onclick="selectMachine(this)">
-                    
-                    <!-- Estatus -->
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="status-text fw-bold text-uppercase">
-                            {% if forloop.first %}ESTATUS: SELECCIONADA{% else %}ESTATUS: SIN SELECCIONAR{% endif %}
-                        </span>
-                        <span class="status-dot rounded-circle" 
-                              style="background-color: {% if forloop.first %}#10b981{% else %}#94a3b8{% endif %}; transition: background-color 0.3s;"></span>
+        <div class="d-flex flex-column align-items-center gap-3 mt-2">
+            {% for data in cutting_machines_data %}
+                {% with machine=data.machine_info orders=data.orders %}
+                <div class="machine-card-wrapper w-100" style="max-width: 800px;">
+                    <div class="machine-card text-start"
+                        data-machine-code="{{ machine.machine_spanish_name }}"
+                        onclick="toggleMachineDetails(this)">
+                        
+                        <div></div
                     </div>
-                    
-                    <!-- Nombre del equipo -->
-                    <h4 class="machine-title fw-bold m-0 mb-1">{{ machine.machine_spanish_name }}</h4>
-                    
-                    <!-- Descripción Auxiliar -->
-                    <p class="text-muted small mb-0 description-text">
-                        Ordenes Asignadas: {{ machine.assigned_orders_count }}
-                    </p>
                 </div>
-            {% endfor %}
+            {% end for %}
         </div>
     </div>
 

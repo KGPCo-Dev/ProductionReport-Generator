@@ -1,6 +1,6 @@
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpPlanningOrders
 from django.db.models import (
-  Subquery, OuterRef, Case, Value, IntegerField, When, TextField, F, Q
+  Subquery, OuterRef, Case, Value, IntegerField, When, TextField, F, Q, Count
   )
 from core.utils.db_utils import date_report_utc_formatting, AtTimeZone
 
@@ -11,6 +11,32 @@ def get_cutting_machines():
 
 def count_registered_orders(machine):
   return KgpCuttingResults.objects.filter(machine=machine, status_id__in=[8, 4]).count()
+
+
+def get_assigned_orders_for_machine():
+  #---- For card dropdown-menu
+  # This function get the orders per machine ----#
+  machines = list(KgpCuttingMachines.objects.all().order_by('machine_id'))
+  assigned_orders = KgpCuttingResults.objects.filter(
+    status_id__in=[8,4]
+  ).select_related(
+    'status'
+  ).order_by(
+    'machine_id', 'stack_id'
+  )
+
+  machine_data = {
+    machine.machine_id: {
+      'machine_info': machine,
+      'orders': []
+    } for machine in machines
+  }
+
+  for order in assigned_orders:
+    if order.machine_id in machine_data:
+      machine_data[order.machine_id]['orders'].append(order)
+
+  return list(machine_data.values())
 
 def get_order_planning_details(build_id):
   return KgpPlanningOrders.objects.filter(

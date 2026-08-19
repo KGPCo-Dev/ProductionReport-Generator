@@ -7,7 +7,9 @@ from django.utils import timezone
 from datetime import timezone as py_tz
 import zoneinfo
 from reports.queries import get_order_details
-from reports.cutting_services import get_single_order_cutting_results, get_cutting_machines, count_registered_orders, get_order_planning_details
+from reports.cutting_services import (
+    get_single_order_cutting_results, get_cutting_machines, count_registered_orders, get_order_planning_details, get_assigned_orders_for_machine
+    )
 from reports.test2_services import get_single_order_last_test2_status
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
 import json
@@ -18,19 +20,9 @@ def is_cutting_lead(user):
 @login_required
 @user_passes_test(is_cutting_lead)
 def cutting_machine_assignation_view(request):
-
-    cutting_machines = []
-    cutting_machines_results = get_cutting_machines()
-
-    for machine in cutting_machines_results:
-        cutting_machines.append({
-            'machine_spanish_name': machine.machine_spanish_name,
-            'machine_code': machine.machine_code,
-            'assigned_orders_count': count_registered_orders(machine),
-        })
-
-    return render(request, 'cutting_machine_assignation/cutting_machine_assignation.html', {
-        'cutting_machines': cutting_machines,
+    cutting_machines_data = get_assigned_orders_for_machine()
+    return render(request, 'cutting_machine_assignation/cutting_machine_assignation.html',{
+        'cutting_machines_data': cutting_machines_data
     })
 
 @login_required
