@@ -112,7 +112,7 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
     for row in queryset:
 
         supabase_date = row.raw_entered
-        production_date = supabase_date - timedelta(hours=1)
+        production_date = supabase_date - timedelta(hours=7)
 
         data.append({
             "Orden": row.build.build if row.build and row.build.build else "-",

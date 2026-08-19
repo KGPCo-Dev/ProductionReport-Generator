@@ -8,16 +8,26 @@ const assignButton = document.querySelector("#btn-confirm-assignation");
 const searchBar = document.querySelector("#master-reel-form");
 const inputValue = document.getElementById("search-input");
 
-searchBar.addEventListener('submit', (event) => { 
+searchBar.addEventListener('submit', (event) => {
     event.preventDefault();
 
     masterReelValue = inputValue.value.trim();
+    const masterReelRegex = /^WO\d{9}$/
 
     console.log("Valor ingresado: ", masterReelValue)
 
     if (!masterReelValue) {
-    Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
-    return;
+        Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
+        return;
+    }
+
+    if (!masterReelRegex.test(masterReelValue)) {
+        Swal.fire(
+            "Formato de Master Reel Inválido",
+            "El código de Master Reel debe iniciar con 'WO' en mayúsculas seguido de exactamente 9 dígitos numéricos (ej. WO123456789).",
+            "warning"
+        );
+        return;
     }
 
     if (masterReelValue) {
@@ -32,7 +42,7 @@ document.querySelector("#order-search-form").addEventListener('submit', async (e
 
     const buildInput = document.getElementById("build-id-input");
     const buildId = buildInput.value.trim();
-    
+
     if (!buildId) {
         return;
     }
@@ -84,20 +94,20 @@ document.querySelector("#order-search-form").addEventListener('submit', async (e
 
     renderOrdersTable();
 
- });
+});
 
-window.removeOrder = function(index) {
-        orders_to_assign.splice(index, 1);
-        renderOrdersTable();
-    };
+window.removeOrder = function (index) {
+    orders_to_assign.splice(index, 1);
+    renderOrdersTable();
+};
 
 function renderOrdersTable() {
     const tbody = document.getElementById("pending-orders-body");
     const section = document.getElementById("pending-orders-section");
 
-    tbody.innerHTML ="";
+    tbody.innerHTML = "";
 
-    if(orders_to_assign.length === 0) {
+    if (orders_to_assign.length === 0) {
         section.style.display = "none";
         return;
     }
@@ -108,7 +118,7 @@ function renderOrdersTable() {
         const tr = document.createElement("tr");
         tr.setAttribute('data-index', index);
         tr.style.position = 'relative';
-        tr.style.userSelect = 'none'; 
+        tr.style.userSelect = 'none';
         tr.innerHTML = `
             <td class="text-start">
                 <span class="drag-handle text-muted me-2" style="cursor: grab; display: inline-flex; align-items: center;">
@@ -192,7 +202,7 @@ function moveSwipe(e) {
         swipeStart.tr.style.transform = `translateX(${diffX}px)`;
 
         const threshold = swipeStart.width * 0.35;
-        if(diffX > threshold) {
+        if (diffX > threshold) {
             swipeStart.tr.classList.add('swipe-danger');
         } else {
             swipeStart.tr.classList.remove('swipe-danger');
@@ -223,7 +233,7 @@ function endSwipe(e) {
     if (isDeleted) {
         tr.style.transform = `translateX(${tr.offsetWidth}px)`
         tr.style.opacity = '0';
-        setTimeout (() => {
+        setTimeout(() => {
             removeOrder(index);
         }, 300);
     } else {
@@ -263,35 +273,18 @@ assignButton?.addEventListener("click", () => {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify(payload)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire('¡Éxito!', data.message, 'success');
-            
-            // Actualizar de forma inmediata el contador en la tarjeta de la máquina seleccionada
-            const activeCard = document.querySelector(`.machine-card[data-machine-code="${selectedMachine}"]`);
-            if (activeCard) {
-                const descElem = activeCard.querySelector('.description-text');
-                if (descElem) {
-                    const match = descElem.textContent.match(/\d+/);
-                    if (match) {
-                        const currentCount = parseInt(match[0]);
-                        const newCount = currentCount + orders_to_assign.length;
-                        descElem.textContent = `Ordenes Asignadas: ${newCount}`;
-                    }
-                }
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire('Error', data.error || 'Ocurrió un problema.', 'error');
             }
-
-            // ¡Limpiamos nuestro estado y repintamos la vista!
-            orders_to_assign = [];
-            renderOrdersTable();
-            
-        } else {
-            Swal.fire('Error', data.error || 'Ocurrió un problema.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error en la peticion POST al asignar ordenes:', error);
-        Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
-    });
+        })
+        .catch(error => {
+            console.error('Error en la peticion POST al asignar ordenes:', error);
+            Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
+        });
 });

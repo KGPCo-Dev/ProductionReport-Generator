@@ -26,18 +26,81 @@
         <input type="hidden" name="cutting_machines" id="cutting_machines" value="">
 
         <!-- Contenedor Flex de Tarjetas de Máquinas -->
-        <div class="d-flex flex-column align-items-center gap-3 mt-2">
+        <!-- Contenedor Flex de Tarjetas de Máquinas -->
+        <div class="d-flex justify-content-center flex-wrap gap-3 mt-2">
             {% for data in cutting_machines_data %}
                 {% with machine=data.machine_info orders=data.orders %}
-                <div class="machine-card-wrapper w-100" style="max-width: 800px;">
+                <div class="machine-card-wrapper">
+                    <!-- Machine Card (Square Card, side by side) -->
                     <div class="machine-card text-start"
                         data-machine-code="{{ machine.machine_spanish_name }}"
                         onclick="toggleMachineDetails(this)">
                         
-                        <div></div
+                        <!-- Top status line -->
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <span class="status-text text-uppercase">ESTATUS: SIN SELECCIONAR</span>
+                            <span class="status-dot rounded-circle"></span>
+                        </div>
+
+                        <!-- Middle machine title and count -->
+                        <div class="my-auto">
+                            <h4 class="machine-title">{{ machine.machine_spanish_name }}</h4>
+                            <p class="description-text mb-0">
+                                Ordenes en Fila: <span class="fw-bold">{{ orders|length }}</span>
+                            </p>
+                        </div>
+
+                        <!-- Bottom actions -->
+                        <div class="machine-card-actions">
+                            <!-- View queue detail icon -->
+                            <button type="button" class="btn-card-action expand-btn" onclick="event.stopPropagation(); toggleMachineDetails(this.closest('.machine-card'))" title="Ver órdenes cargadas">
+                                <i class="bi bi-list-task"></i>
+                            </button>
+                            <!-- Select machine icon -->
+                            <button type="button" class="btn-card-action select-btn" onclick="event.stopPropagation(); selectMachine(this.closest('.machine-card'))" title="Seleccionar para asignar">
+                                <i class="bi bi-check-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Expandable Drawer (details of orders) -->
+                    <div class="machine-details-container">
+                        <div class="p-1">
+                            {% if orders %}
+                                <div class="table-responsive rounded">
+                                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.7rem; width: 100%;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>No. Orden</th>
+                                                <th>M. Reel</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders %}
+                                            <tr>
+                                                <td class="fw-medium text-dark text-truncate" style="max-width: 90px;" title="{{ order.build_id }}">{{ order.build_id }}</td>
+                                                <td>
+                                                    {% if order.master_reel %}
+                                                        <span class="badge bg-light text-dark border p-0.5" style="font-size: 0.58rem;">{{ order.master_reel }}</span>
+                                                    {% else %}
+                                                        <span class="text-muted italic" style="font-size: 0.58rem;">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-2 text-muted bg-white rounded border">
+                                    <p class="mb-0" style="font-size: 0.62rem;">Sin órdenes.</p>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            {% end for %}
+                {% endwith %}
+            {% endfor %}
         </div>
     </div>
 
@@ -138,6 +201,28 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <script>
+        function toggleMachineDetails(card) {
+            const wrapper = card.closest('.machine-card-wrapper');
+            const details = wrapper.querySelector('.machine-details-container');
+            const icon = card.querySelector('.expand-btn i');
+
+            const isExpanded = wrapper.classList.contains('expanded');
+
+            if (isExpanded) {
+                details.style.maxHeight = '0';
+                wrapper.classList.remove('expanded');
+                if (icon) {
+                    icon.className = 'bi bi-list-task';
+                }
+            } else {
+                details.style.maxHeight = '250px'; // limit to ~10 rows max height
+                wrapper.classList.add('expanded');
+                if (icon) {
+                    icon.className = 'bi bi-list-task text-primary';
+                }
+            }
+        }
+
         function selectMachine(card) {
             if (masterReelValue !== null && masterReelValue !== "") {
                 Swal.fire({
@@ -160,26 +245,34 @@
             }
 
             const isActive = card.classList.contains('active');
-            const siblingCards = Array.from(document.querySelectorAll('.machine-card')).filter(c => c !== card);
-            const areSiblingsHidden = siblingCards.some(c => c.style.display === 'none');
+            const wrapper = card.closest('.machine-card-wrapper');
+            const siblingWrappers = Array.from(document.querySelectorAll('.machine-card-wrapper')).filter(w => w !== wrapper);
+            const areSiblingsHidden = siblingWrappers.some(w => w.style.display === 'none');
 
             if (!isActive) {
-
                 document.querySelectorAll('.machine-card').forEach(c => {
-
+                    c.classList.remove('active');
                     c.querySelector('.status-text').textContent = 'ESTATUS: SIN SELECCIONAR';
-                    c.querySelector('.status-dot').style.backgroundColor = '#94a3b8';
-                    if (c !== card) {
-                        c.style.display = 'none';
-                    } else {
-                        c.style.display = 'flex';
+                    const selectIcon = c.querySelector('.select-btn i');
+                    if (selectIcon) {
+                        selectIcon.className = 'bi bi-check-circle';
                     }
                 });
-                
+
+                // Hide other machine wrappers completely (hides card)
+                siblingWrappers.forEach(w => {
+                    w.style.display = 'none';
+                });
+                wrapper.style.display = 'block';
+
                 card.classList.add('active');
                 card.querySelector('.status-text').textContent = 'ESTATUS: SELECCIONADA';
-                card.querySelector('.status-dot').style.backgroundColor = '#10b981';
                 
+                const selectIcon = card.querySelector('.select-btn i');
+                if (selectIcon) {
+                    selectIcon.className = 'bi bi-check-circle-fill';
+                }
+
                 const machineCode = card.getAttribute('data-machine-code');
                 const hiddenInput = document.getElementById('cutting_machines');
                 if (hiddenInput) {
@@ -188,15 +281,17 @@
                 }
             } else {
                 if (areSiblingsHidden) {
-                    siblingCards.forEach(c => {
-                        c.style.display = 'flex';
+                    siblingWrappers.forEach(w => {
+                        w.style.display = 'block';
                     });
                 } else {
-                    siblingCards.forEach(c => {
-                        c.style.display = 'none';
+                    siblingWrappers.forEach(w => {
+                        w.style.display = 'none';
                     });
                 }
             }
         }
     </script>
+
 {% endblock %}
+
