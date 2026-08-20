@@ -1,3 +1,4 @@
+from core.utils.db_utils import date_report_formatting
 from reports.models import KgpSubassemblyResults, KgpCuttingResults, KgpProductionOrders
 from django.db.models import OuterRef, Subquery, Exists, F
 
@@ -53,3 +54,13 @@ def get_subassemble_table():
     )
 
     return list(orders_data)
+
+def get_subassemble_report_date(start_date_str, end_date_str, shift=""):
+
+    start_datetime, end_datetime = date_report_formatting(start_date_str, end_date_str)
+
+    queryset = KgpSubassemblyResults.objects.filter(
+        entered_date__gte=start_datetime,
+        entered_date__lt=end_datetime,
+    )
+    return None

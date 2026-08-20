@@ -12,7 +12,7 @@ searchBar.addEventListener('submit', (event) => {
     event.preventDefault();
 
     masterReelValue = inputValue.value.trim();
-    const masterReelRegex = /^WO\d{9}$/
+    const masterReelRegex = /^WO[A-Z0-9]{9}$/;
 
     console.log("Valor ingresado: ", masterReelValue)
 
@@ -24,7 +24,7 @@ searchBar.addEventListener('submit', (event) => {
     if (!masterReelRegex.test(masterReelValue)) {
         Swal.fire(
             "Formato de Master Reel Inválido",
-            "El código de Master Reel debe iniciar con 'WO' en mayúsculas seguido de exactamente 9 dígitos numéricos (ej. WO123456789).",
+            "El código de Master Reel debe iniciar con 'WO' en mayúsculas seguido de exactamente 9 caracteres alfanuméricos en mayúsculas (ej. WO72R393309).",
             "warning"
         );
         return;
