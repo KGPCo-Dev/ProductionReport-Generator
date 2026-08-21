@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Max, Q, F
 from django.utils import timezone
 from datetime import timezone as py_tz
 import zoneinfo
@@ -145,3 +145,67 @@ def save_machine_assignation(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
     return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+@login_required
+def remove_machine_assignation(request):
+    if not is_cutting_lead(request.user):
+        return JsonResponse({
+            'success': False, 
+            'error': ' No tienes permisos para relaizar esta acción.'
+        }, status=403)
+    
+    if request.method == 'POST':
+        try:
+            #---- Selected Order is validated to begi delete process ----#
+            data = json.loads(request.body)
+            build_id = data.get('build_id')
+
+            if not build_id:
+                return JsonResponse({
+                'success': False, 
+                'error': 'No se proporcionó número de orden.'
+                }, status=400)
+            
+            assignation = KgpCuttingResults.objects.filter(build_id=build_id, status_id=8).first()
+
+            if not assignation:
+                wip_exists = KgpCuttingResults.objects.filter(build_id=build_id, status_id=4).first()
+
+                if wip_exists:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'La orden ya está en proceso de corte'
+                    }, status=400)
+
+                return JsonResponse({
+                    'success': False,
+                    'error': 'La orden no se encuentra ctiva en ninguna cola.'
+                }, status=404)
+
+            #---- If order is on Queue status and has been founded we proceed ----#
+
+            machine_instance = assignation.machine
+            deleted_stack_id = assignation.stack_id
+
+            with transaction.atomic():
+
+                assignation.delete()
+                KgpCuttingResults.objects.filter(
+                    machine=machine_instance,
+                    status_id=8,
+                    stack_id__gt=deleted_stack_id
+                ).update(stack_id=F('stack_id') - 1)
+            return JsonResponse({
+                'success': True,
+                'message': 'Orden desasignada y cola reordenada.'
+            }, status=200)
+        
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    }, status=405)

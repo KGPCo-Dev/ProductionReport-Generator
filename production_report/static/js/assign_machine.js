@@ -12,9 +12,20 @@ searchBar.addEventListener('submit', (event) => {
     event.preventDefault();
 
     masterReelValue = inputValue.value.trim();
+    const selectedMachine = machineSelector?.value;
+
     const masterReelRegex = /^WO[A-Z0-9]{9}$/;
 
     console.log("Valor ingresado: ", masterReelValue)
+
+    if (!selectedMachine) {
+        Swal.fire(
+            "Máquina sin seleccionar",
+            "Selecciona una máquina antes de asignar un Master Reel.",
+            "warning"
+        );
+        return;
+    }
 
     if (!masterReelValue) {
         Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
@@ -288,3 +299,173 @@ assignButton?.addEventListener("click", () => {
             Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
         });
 });
+
+// Swipe and delete assigned order method
+
+document.addEventListener('DOMContentLoaded', () => {
+    const flexContainer = document.querySelector(".d-flex.justify-content-center.flex-wrap.gap-3.mt-2");
+
+    if (!flexContainer) return;
+
+    let detailsSwipeStart = null;
+
+    flexContainer.addEventListener('mousedown', startDetailsSwipe);
+    flexContainer.addEventListener('touchstart', startDetailsSwipe, { passive: true });
+
+    function startDetailsSwipe(e) {
+        const tr = e.target.closest('.machine-details-container tr');
+
+        if (!tr || tr.closest('thead')) return;
+
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+        detailsSwipeStart = {
+            startX: clientX,
+            startY: clientY,
+            tr: tr,
+            width: tr.offsetWidth,
+            isScrolling: false,
+            isSwiping: false
+        };
+
+        tr.classList.remove('swipe-animate');
+
+        document.addEventListener('mousemove', moveDetailsSwipe);
+        document.addEventListener('touchmove', moveDetailsSwipe, { passive: false });
+        document.addEventListener('mouseup', endDetailsSwipe);
+        document.addEventListener('touchend', endDetailsSwipe);
+    }
+
+    function moveDetailsSwipe(e) {
+        if (!detailsSwipeStart) return;
+
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+        const diffX = clientX - detailsSwipeStart.startX;
+        const diffY = clientY - detailsSwipeStart.startY;
+
+        if (!detailsSwipeStart.isSwiping && !detailsSwipeStart.isScrolling) {
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                detailsSwipeStart.isSwiping = true;
+            } else {
+                detailsSwipeStart.isScrolling = true;
+            }
+        }
+
+        if (detailsSwipeStart.isScrolling) return;
+
+        if (detailsSwipeStart.isSwiping && diffX > 0) {
+            if (e.cancelable) e.preventDefault();
+
+            const tr = detailsSwipeStart.tr;
+            tr.style.transform = `translateX(${diffX}px)`;
+
+            const threshold = detailsSwipeStart.width * 0.35;
+
+            if (diffX > threshold) {
+                tr.classList.add('swipe-danger');
+            } else {
+                tr.classList.remove('swipe-danger');
+            }
+        }
+    }
+
+    function endDetailsSwipe(e) {
+        if (!detailsSwipeStart) return;
+
+        const clientX = e.type.startsWith('touch') ? e.changedTouches[0].clientX : e.clientX;
+        const diffX = clientX - detailsSwipeStart.startX;
+        const threshold = detailsSwipeStart.width * 0.35;
+        const tr = detailsSwipeStart.tr;
+
+        document.removeEventListener('mousemove', moveDetailsSwipe);
+        document.removeEventListener('touchmove', moveDetailsSwipe);
+        document.removeEventListener('mouseup', endDetailsSwipe);
+        document.removeEventListener('touchend', endDetailsSwipe);
+
+        const isTriggered = detailsSwipeStart.isSwiping && diffX > threshold;
+        detailsSwipeStart = null;
+
+        tr.classList.add('swipe-animate');
+
+        if (isTriggered) {
+            const buildIdCell = tr.cells[0]
+            const buildId = buildIdCell ? buildIdCell.textContent.trim() : null;
+
+            if (!buildId) {
+                tr.style.transform = `translateX(0px)`;
+                tr.classList.remove('swipe-danger');
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Eliminar order?',
+                text: `¿Estás seguro de que deseas eliminar la orden ${buildId} de la Maquina?`,
+                icon: 'warning',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Si, desasignar',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    cancelButton: 'kgp-cancel-button',
+                    confirmButton: 'kgp-confirm-button'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                    Swal.fire({
+                        title: 'Procesando...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    fetch('/cutting-machine-assignation/api/remove-assignation/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                        body: JSON.stringify({
+                            build_id: buildId
+                        })
+                    }).then(
+                            response => response.json()
+                        ).then(data => {
+                            if (data.success) {
+                                Swal.fire(
+                                    'Orden desasignada',
+                                    data.message,
+                                    'success'
+                                ).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire(
+                                    'Error',
+                                    data.error || 'Ocurrió un problema...',
+                                    'error'
+                                );
+
+                                tr.style.transform = `translateX(0px)`;
+                                tr.classList.remove('swipe-danger');
+                            }
+                        }).catch(error => {
+                            console.error('Error', error);
+                            Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
+
+                            tr.style.transform = `translateX(0px)`;
+                            tr.classList.remove('swipe-danger');
+                        });   
+                } else {
+                    tr.style.transform = `translateX(0px)`;
+                    tr.classList.remove('swipe-danger');
+                }
+            });
+        } else {
+            tr.style.transform = `translateX(0px)`;
+            tr.classList.remove('swipe-danger');
+        }
+    }
+});
+
