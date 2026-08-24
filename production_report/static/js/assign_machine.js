@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ).then(data => {
                             if (data.success) {
                                 Swal.fire(
-                                    'Orden desasignada',
+                                    'Orden desasignada.',
                                     data.message,
                                     'success'
                                 ).then(() => {
