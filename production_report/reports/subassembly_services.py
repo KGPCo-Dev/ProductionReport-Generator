@@ -1,6 +1,7 @@
-from core.utils.db_utils import date_report_formatting
-from reports.models import KgpSubassemblyResults, KgpCuttingResults, KgpProductionOrders
-from django.db.models import OuterRef, Subquery, Exists, F
+from core.utils.db_utils import date_report_formatting, AtTimeZone, PRODUCTION_DAYS_SPANISH
+from reports.models import KgpSubassemblyResults, KgpCuttingResults, KgpProductionOrders, KgpSubassembleKitResults
+from django.db.models import OuterRef, Subquery, Exists, F, Q
+from datetime import timedelta
 
 #---- This file is intended to manage SubAssembly operation queries ----#
 
@@ -55,12 +56,67 @@ def get_subassemble_table():
 
     return list(orders_data)
 
-def get_subassemble_report_date(start_date_str, end_date_str, shift=""):
+def get_subassembly_report_date(start_date_str, end_date_str, shift=""):
 
+    #---- Date, Day, Hour
+    #---- Shift, Employee, Status
+    #----- CUTTING RESULTS DATE FORMATING ----#
+    
     start_datetime, end_datetime = date_report_formatting(start_date_str, end_date_str)
 
-    queryset = KgpSubassemblyResults.objects.filter(
-        entered_date__gte=start_datetime,
-        entered_date__lt=end_datetime,
+    date_filter = (
+        Q(entered_date__gte=start_datetime, entered_date__lt=end_datetime) |
+        Q(finish_date__gte=start_datetime, finish_date__lt=end_datetime) |
+        Q(delivered_date__gte=start_datetime, delivered_date__lt=end_datetime)
     )
-    return None
+
+    queryset = KgpSubassemblyResults.objects.filter(
+        date_filter
+    ).order_by('entered_date')
+
+    if shift in ['1', '2']:
+        shift_int = int(shift)
+        queryset = queryset.filter(
+            Q(start_shift=shift_int) |
+            Q(finish_shift=shift_int) |
+            Q(delivered_shift=shift_int) 
+        )
+
+    data = []
+    days = PRODUCTION_DAYS_SPANISH
+
+    raw_data = queryset.values(
+        'build_id',
+        'build_id__tethers', #KgpProductionOrders
+        'entered_date',
+        'start_shift',
+        'status__status_description_spanish', #KgpOrdersStatus
+        'employee_number',
+        'finish_date',
+        'finish_shift',
+        'delivered_date',
+        'delivered_shift',
+        'delivered_employee',
+        'delivered_cell'
+    )
+
+    for row in raw_data.iterator():
+        finish_date = row['finish_date'] if row['finish_date'] else None
+        delivered_date = row['delivered_date'] if row['delivered_date'] else None
+        entered_date = row['entered_date'] if row['entered_date'] else None
+
+        data.append({
+            "Orden": row['build_id'] or "-",
+            "Tethers Totales": row['build_id__tethers'] or "-",
+            "Fecha de Inicio": entered_date.strftime("%d/%m/%Y") if entered_date else "-",
+            "Turno de Inicio": row['start_shift'] or "-",
+            "Estatus": row['status__status_description_spanish'] or "-",
+            "Empleado": row['employee_number'] or "-",
+            "Fecha de Finalización": finish_date.strftime("%d/%m/%Y") if finish_date else "-",
+            "Turno de Finalización": row['finish_shift'] or "-",
+            "Fecha de Entrega": delivered_date.strftime("%d/%m/%Y") if delivered_date else "-",
+            "Turno de Entrega": row['delivered_shift'] or "-",
+            "Empleado que Recibe": row['delivered_employee'] or "-",
+            "Celda": row['delivered_cell'] or "-",
+        })
+    return data

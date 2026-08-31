@@ -4,6 +4,8 @@ from django.db.models import Func, DateTimeField
 from django.utils import timezone as django_tz
 import zoneinfo
 
+PRODUCTION_DAYS_SPANISH = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
 def dict_fetch_all(cursor):
     columns = [col[0] for col in cursor.description] 
     return [

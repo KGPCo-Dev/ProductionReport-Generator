@@ -3,6 +3,7 @@ from reports.cutting_services import get_machines_status
 from reports.subassembly_services import get_subassemble_table
 from reports.test2_services import get_fibers_report_date, get_production_report_date, get_scrap_report_data
 from reports.cutting_services import get_cutting_report_date
+from reports.subassembly_services import get_subassembly_report_date
 from reports.models import (KgpProductionOrders, KpgProcessFails, KpgProductionProcessResults)
 
 
@@ -71,6 +72,19 @@ REPORT_CONFIG = {
             'date_col': 'Dia de Produccion',
             'hour_col': 'Hora',
             'label': 'Ordenes Cortadas',
+            'base_color': '#0d6efd',
+            'lighter_color': 'rgba(13, 110, 253, 0.8)',
+            'darker_color': 'rgba(13, 110, 253, 0.3)'
+         }
+    },
+    'subassembly_report': { 
+        'query': get_subassembly_report_date,
+        'filename': 'Reporte de Sub-Ensamble',
+        'sheet_name': 'Produccion',
+        'chart_config': { 
+            'date_col': 'Dia de Produccion',
+            'hour_col': 'Hora',
+            'label': 'Kits Producidos',
             'base_color': '#0d6efd',
             'lighter_color': 'rgba(13, 110, 253, 0.8)',
             'darker_color': 'rgba(13, 110, 253, 0.3)'

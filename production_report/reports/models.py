@@ -682,6 +682,7 @@ class KgpSubassembleKitResults(models.Model):
     build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id')
     entered_date = models.DateTimeField(blank=True, null=True)
     employee_number = models.TextField(blank=True, null=True)
+    delivered_cell = models.SmallIntegerField(blank=True, null=True)
     cable_type = models.TextField(blank=True, null=True)
     status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True, db_column='status_id')
     registered_tethers = models.BigIntegerField(blank=True, null=True)
@@ -736,10 +737,15 @@ class KgpSubassemblyResults(models.Model):
     build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, db_column='build_id', to_field='build')
     kit_delivered = models.BooleanField(blank=True, null=True)
     employee_number = models.BigIntegerField(blank=True, null=True)
-    updated_date = models.TextField(blank=True, null=True)
     scrap = models.BooleanField(blank=True, null=True)
     status = models.ForeignKey(KgpOrdersStatus, models.DO_NOTHING, blank=True, null=True)
-    kit_delivered_date = models.DateTimeField()
+    delivered_cell = models.SmallIntegerField(blank=True, null=True)
+    delivered_employee = models.SmallIntegerField(blank=True, null=True)
+    finish_date = models.DateTimeField()
+    delivered_date = models.DateTimeField()
+    start_shift = models.SmallIntegerField(blank=True, null=True)
+    finish_shift = models.SmallIntegerField(blank=True, null=True)
+    delivered_shift = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

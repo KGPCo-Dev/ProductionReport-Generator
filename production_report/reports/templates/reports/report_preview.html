@@ -46,6 +46,7 @@
                     <select name="report_type" id="report_type" class="form-select">
                         <option value="production_report" {% if report_type == 'production_report' %}selected{% endif %}>Produccion de Tethers</option>
                         <option value="cutting_report" {% if report_type == 'cutting_report' %}selected{% endif %}>Ordenes Cortadas</option>
+                        <option value="subassembly_report" {% if report_type == 'subassembly_report' %}selected{% endif %}>Kits Sub-Ensamble</option>
                         <option value="final_test_report" {% if report_type == 'final_test_report' %}selected{% endif %}>Resultados Final Test</option>
                         <option value="scrap_report" {% if report_type == 'scrap_report' %}selected{% endif %}>Reporte de Scrap</option>
                     </select>

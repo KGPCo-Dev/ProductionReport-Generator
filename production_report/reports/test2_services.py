@@ -115,16 +115,17 @@ def get_production_report_date(start_date_str, end_date_str, shift=""):
         production_date = supabase_date - timedelta(hours=7)
 
         data.append({
+            "Fecha de Produccion": production_date.strftime('%d/%m/%Y'),
+            "Dia de Produccion": f"{days[production_date.weekday()]}",
             "Orden": row.build.build if row.build and row.build.build else "-",
-            "Fecha de Registro": supabase_date.strftime("%d/%m/%Y"),
             "Hora de Registro": supabase_date.strftime("%H:%M"),
-            "Dia de Produccion": f"{days[production_date.weekday()]} {production_date.strftime('%d/%m')}",
             "production_date_obj": production_date.date(),
             "Tipo de Cable": row.build.cable_type if row.build else "-",
             "Empleado": row.employee_number if row.employee_number else "-",
             "Estacion": row.workplace if row.workplace else "-",
             "Celda": row.production_cell if row.production_cell else "-",
-            "Turno": row.production_shift if row.production_shift else "-"
+            "Turno": row.production_shift if row.production_shift else "-",
+            "Fecha de Registro": supabase_date.strftime("%d/%m/%Y"),
         })
 
     return data
