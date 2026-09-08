@@ -6,7 +6,12 @@ from django.shortcuts import render
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from reports.models import ProcessNames
-from reports.queries import get_order_details, get_fails_results, get_process_results
+from reports.queries import (
+    get_order_details,
+    get_fails_results,
+    get_process_results,
+    get_tracking_results
+)
 from reports.test2_services import get_single_order_test2_results
 from reports.cutting_services import get_order_planning_details
 from django.db.models import F
@@ -21,7 +26,9 @@ def order_tracker_view(request):
     order_details = None
     test2_results = None
     process_results = None
+    tracking_results = None
     order_progress = None
+    planning_details = None
 
     if request.method == 'GET':
         build_id = request.GET.get('search')
@@ -30,8 +37,14 @@ def order_tracker_view(request):
 
             try:
                 order_details = get_order_details(build_id)
+                if order_details:
+                    print(f"Order details recived: {order_details}")
+                    print(vars(order_details)) 
+
                 planning_details = clear_planning_results(build_id)
                 process_results = get_results(build_id)
+                tracking_results = get_tracking_results(build_id)
+
                 test2_results = get_single_order_test2_results(build_id)
 
                 if order_details and process_results:
@@ -47,9 +60,9 @@ def order_tracker_view(request):
         'test2_results': test2_results,
         'order_details': order_details,
         'planning_details':planning_details,
-        'order_progress': order_progress
+        'order_progress': order_progress,
+        'tracking_results': tracking_results
      })
-
 
 def get_results(build_id):
 
@@ -64,7 +77,6 @@ def get_results(build_id):
         ]
 
     return process_results
-
 
 def get_tethers_status(order_details, process_results):
 

@@ -12,6 +12,12 @@ def get_cutting_machines():
 def count_registered_orders(machine):
   return KgpCuttingResults.objects.filter(machine=machine, status_id__in=[8, 4]).count()
 
+def get_single_order_lastest_cutting_result(build_id):
+  #---- Gets last cutting result for order_tracking_preview.html ----#
+  return KgpCuttingResults.objects.filter(
+    build = build_id
+  ).order_by(
+    '-entered_date').first()
 
 def get_assigned_orders_for_machine():
   #---- For card dropdown-menu

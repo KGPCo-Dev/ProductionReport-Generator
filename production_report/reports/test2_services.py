@@ -18,7 +18,9 @@ def get_single_order_test2_results(build_id):
   ).select_related('build').order_by('entered_date')
 
 def get_single_order_last_test2_status(build_id):
-  #---- Get last result to verify if order can be assigned to a machine ----#
+  #---- Get last result to verify if order can be assigned to a machine
+  #     or tracking on order_tracking_preview.html ----#
+  
   return KgpTest2Results.objects.filter(
     build=build_id
   ).order_by(

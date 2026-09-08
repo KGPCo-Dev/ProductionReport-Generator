@@ -3,8 +3,20 @@ from datetime import datetime, timedelta, time,timezone as py_tz
 from django.db.models import Func, DateTimeField
 from django.utils import timezone as django_tz
 import zoneinfo
+from enum import IntEnum
 
 PRODUCTION_DAYS_SPANISH = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+class OrderStatus(IntEnum):
+    NOT_OPEN = 1
+    OPEN = 2
+    DONE = 3
+    WIP = 4
+    ON_GOING = 5
+    HOLD = 6
+    SCRAP = 7
+    QUEUE = 8
+    KIT_DLV = 9
 
 def dict_fetch_all(cursor):
     columns = [col[0] for col in cursor.description] 

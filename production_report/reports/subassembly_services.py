@@ -5,6 +5,13 @@ from datetime import timedelta
 
 #---- This file is intended to manage SubAssembly operation queries ----#
 
+def get_single_order_lastest_subassembly_results(build_id):
+    return KgpSubassemblyResults.objects.filter(
+        build=build_id
+    ).order_by(
+        '-entered_date'
+    ).first()
+
 def get_subassemble_table():
     # 1. Subconsulta para Corte: tomamos la orden con mayor prioridad (status_id 3 > 4)
     # DISTINCT ON (build_id) selecciona la primera fila del orden especificado

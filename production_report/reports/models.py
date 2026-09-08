@@ -348,6 +348,7 @@ class KgpCuttingMachines(models.Model):
     machine_code = models.TextField()
     machine_english_name = models.TextField(blank=True, null=True)
     machine_spanish_name = models.TextField(blank=True, null=True)
+    machine_number = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

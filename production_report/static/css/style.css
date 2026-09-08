@@ -896,3 +896,116 @@ body {
    margin: 0 0.5rem;
    opacity: 0.7;
 }
+
+.stepper-wrapper {
+   display: flex;
+   justify-content: space-between;
+   position: relative;
+   width: 100%;
+}
+
+.stepper-item {
+   position: relative;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   flex: 1;
+   cursor: pointer;
+   transition: transform 0.2s ease;
+}
+
+.stepper-item:hover {
+   transform: translateY(-3px);
+}
+
+.stepper-item::before {
+   position: absolute;
+   content: "";
+   border-bottom: 6px solid #e2e8f0;
+   width: 100%;
+   top: 24px;
+   left: -50%;
+   z-index: 1;
+   transition: border-color 0.4s ease;
+}
+
+.stepper-item:first-child::before {
+   content: none;
+}
+
+.stepper-item.completed::before {
+   border-color: var(--kgp-blue);
+}
+
+.stepper-item.is-scrap::before {
+   border-color: var(--fail-red);
+}
+
+.stepper-item .step-counter {
+   position: relative;
+   z-index: 2;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   width: 48px;
+   height: 48px;
+   border-radius: 50%;
+   background: #f8fafc;
+   border: 3px solid #cbd5e1;
+   color: #94a3b8;
+   font-weight: 700;
+   font-size: 1.25rem;
+   margin-bottom: 12px;
+   transition: all 0.3s ease;
+   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stepper-item.completed .step-counter {
+   background-color: var(--kgp-blue);
+   border-color: var(--kgp-blue);
+   color: #ffffff;
+   box-shadow: 0 4px 12px rgba(0, 86, 179, 0.35);
+}
+
+.stepper-item.in-progress .step-counter {
+   background-color: #ffffff;
+   border-color: var(--kgp-blue);
+   color: var(--kgp-blue);
+   box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.2);
+}
+
+.stepper-item.is-scrap .step-counter {
+   background-color: var(--fail-red);
+   border-color: var(--fail-red);
+   color: #ffffff;
+   box-shadow: 0 4px 12px rgba(239, 54, 54, 0.35);
+}
+
+.stepper-item .step-name {
+   font-size: 0.85rem;
+   font-weight: 600;
+   color: #64748b;
+   text-align: center;
+   line-height: 1.25;
+   max-width: 120px;
+   transition: color 0.3s ease;
+}
+
+.stepper-item.completed .step-name {
+   color: #1e293b;
+   font-weight: 700;
+}
+
+.stepper-item.in-progress .step-name {
+   color: var(--kgp-blue);
+   font-weight: 700;
+}
+
+.stepper-item.is-scrap .step-name {
+   color: var(--fail-red);
+   font-weight: 700;
+}
+
+.step-num {
+   font-size: 0.95rem;
+}
