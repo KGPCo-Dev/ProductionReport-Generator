@@ -15,6 +15,8 @@ searchBar.addEventListener('submit', (event) => {
     const selectedMachine = machineSelector?.value;
 
     const masterReelRegex = /^WO[A-Z0-9]{9}$/;
+    const masterReelCNN = /^C[A-Z0-9]{10}$/;
+    const isValidMasterReel = masterReelRegex.test(masterReelValue) ||  masterReelCNN.test(masterReelValue)
 
     console.log("Valor ingresado: ", masterReelValue)
 
@@ -32,10 +34,10 @@ searchBar.addEventListener('submit', (event) => {
         return;
     }
 
-    if (!masterReelRegex.test(masterReelValue)) {
+    if (!isValidMasterReel) {
         Swal.fire(
             "Formato de Master Reel Inválido",
-            "El código de Master Reel debe iniciar con 'WO' en mayúsculas seguido de exactamente 9 caracteres alfanuméricos en mayúsculas (ej. WO72R393309).",
+            "Favor de ingresar un formato de Master Reel valido.",
             "warning"
         );
         return;

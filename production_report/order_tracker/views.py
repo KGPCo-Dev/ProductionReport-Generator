@@ -52,7 +52,6 @@ def order_tracker_view(request):
 
             except Exception as error_fatal:
                 print(f"Critical Error on DB: {error_fatal}")
-                order_details = None
 
     return render(request,'order_tracker/order_tracker_preview.html', { 
         'build_id': build_id,
