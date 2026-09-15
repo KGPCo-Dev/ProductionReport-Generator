@@ -50,14 +50,6 @@ def get_tracking_results(build_id):
   # Step 5 KIt Delivered
   # Step 6 Test 2 Result Registered
 
-  test2_result = get_single_order_last_test2_status(build_id)
-
-  print("Test2 Results")
-  print("Type:", type(test2_result))
-  print("Value:", test2_result)
-  if test2_result:
-    print(vars(test2_result))
-
   cutting_result = get_single_order_lastest_cutting_result(build_id)
 
   print("Cutting Results")
@@ -65,14 +57,27 @@ def get_tracking_results(build_id):
   print("Value:", cutting_result)
   if cutting_result:
     print(vars(cutting_result))
+    last_cutting_date = cutting_result.entered_date
+
+  test2_result = get_single_order_last_test2_status(build_id)
+
+  if (
+    test2_result
+    and test2_result.entered_date
+    and last_cutting_date
+    and test2_result.entered_date < last_cutting_date
+  ):
+    test2_result = None
 
   subassembly_result = get_single_order_lastest_subassembly_results(build_id)
 
-  print("SubResults")
-  print("Type:", type(subassembly_result))
-  print("Value:", subassembly_result)
-  if subassembly_result:
-    print(vars(subassembly_result))
+  if (
+    subassembly_result
+    and subassembly_result.entered_date
+    and last_cutting_date
+    and subassembly_result.entered_date < last_cutting_date
+  ):
+    subassembly_result = None
 
   #---- STEP 1 ----#
   has_cutting = cutting_result is not None

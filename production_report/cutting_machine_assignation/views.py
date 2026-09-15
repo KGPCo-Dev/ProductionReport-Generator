@@ -129,7 +129,6 @@ def save_machine_assignation(request):
                     results_to_create.append(
                         KgpCuttingResults(
                             build_id=order_data.get('build_id'),
-                            entered_date = timezone.now(),
                             machine=machine_instance,
                             master_reel=order_data.get('master_reel'),
                             status=queue_status,
