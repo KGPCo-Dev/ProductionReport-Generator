@@ -41,14 +41,13 @@ def order_tracker_view(request):
                     print(f"Order details recived: {order_details}")
                     print(vars(order_details)) 
 
+                test2_results = get_single_order_test2_results(build_id)
+                print(f"----Test 2 Results----: {test2_results}")
+                print(vars(test2_results))
+                
                 planning_details = clear_planning_results(build_id)
                 process_results = get_results(build_id)
                 tracking_results = get_tracking_results(build_id)
-
-                test2_results = get_single_order_test2_results(build_id)
-
-                if order_details and process_results:
-                    order_progress = get_tethers_status(order_details, process_results)
 
             except Exception as error_fatal:
                 print(f"Critical Error on DB: {error_fatal}")
@@ -78,7 +77,7 @@ def get_results(build_id):
     return process_results
 
 def get_tethers_status(order_details, process_results):
-
+#---- Yield System Function----#
     get_tethers_status = []
 
     try:

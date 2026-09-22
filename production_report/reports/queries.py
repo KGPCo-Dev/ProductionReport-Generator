@@ -54,10 +54,12 @@ def get_tracking_results(build_id):
 
   print("Cutting Results")
   print("Type:", type(cutting_result))
-  print("Value:", cutting_result)
+  print("CR Value:", cutting_result)
   if cutting_result:
     print(vars(cutting_result))
     last_cutting_date = cutting_result.entered_date
+  else:
+    last_cutting_date = None
 
   test2_result = get_single_order_last_test2_status(build_id)
 
@@ -275,7 +277,7 @@ REPORT_CONFIG = {
             'hour_col': 'Hora',
             'label': 'Kits Producidos',
             'base_color': '#0d6efd',
-            'lighter_color': 'rgba(13, 110, 253, 0.8)',
+          'lighter_color': 'rgba(13, 110, 253, 0.8)',
             'darker_color': 'rgba(13, 110, 253, 0.3)'
          }
     },
