@@ -4,17 +4,74 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!tableContainer || !tableTypeSelect) return;
 
-    // Objeto para gestionar las órdenes que están en su "periodo de gracia" antes de ser eliminadas.
-    // Formato: { "orderId": { timer: setTimeout_id, element: rowElement } }
+    // Configuración general
     const pendingDeletion = {};
-    const DELETION_GRACE_PERIOD = 120000; // 30 segundos en milisegundos. ¡Ajusta este valor!
+    const DELETION_GRACE_PERIOD = 120000; // 2 minutos (120 seg)
+    const PAGE_SIZE = 8;                  // 8 registros por vista
+    const PAGE_DURATION = 20000;          // 20 segundos por vista
+    
+    let currentPage = 0;
+    let cycleTimer = null;
 
+    // Aplica la visibilidad de filas según la página actual
+    function renderPagination() {
+        const tableBody = tableContainer.querySelector('tbody');
+        if (!tableBody) return;
+
+        const isSubassembly = tableTypeSelect.value === 'subassembly_status_table';
+        const rows = Array.from(tableBody.querySelectorAll('tr[data-order-id]'));
+
+        // Si es máquinas o no hay filas, mostramos todo normalmente
+        if (!isSubassembly || rows.length === 0) {
+            rows.forEach(row => row.style.display = '');
+            return;
+        }
+
+        const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+        if (currentPage >= totalPages) {
+            currentPage = 0;
+        }
+
+        const startIndex = currentPage * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+
+        rows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Programa el siguiente paso del ciclo (20 segundos)
+    function scheduleNextCycle() {
+        if (cycleTimer) clearTimeout(cycleTimer);
+
+        cycleTimer = setTimeout(() => {
+            const isSubassembly = tableTypeSelect.value === 'subassembly_status_table';
+            const tableBody = tableContainer.querySelector('tbody');
+            const rows = tableBody ? Array.from(tableBody.querySelectorAll('tr[data-order-id]')) : [];
+            const totalPages = Math.ceil(rows.length / PAGE_SIZE) || 1;
+
+            if (isSubassembly && rows.length > PAGE_SIZE && (currentPage + 1) < totalPages) {
+                // Aún hay más páginas del query actual por mostrar
+                currentPage++;
+                renderPagination();
+                scheduleNextCycle();
+            } else {
+                // Finalizó el carrusel completo o es máquinas: consultamos de nuevo a la BD
+                currentPage = 0;
+                updateTable();
+            }
+        }, PAGE_DURATION);
+    }
+
+    // Consulta la base de datos y actualiza el DOM
     function updateTable() {
         const tableType = tableTypeSelect.value;
         const timestamp = new Date().getTime();
-        
-        // console.log('Actualizando tabla en segundo plano:', tableType); // Deshabilitado para producción
-        
+
         fetch(`${window.location.pathname}?partial=true&table_type=${tableType}&_=${timestamp}`, {
             method: 'GET',
             cache: 'no-store',
@@ -27,38 +84,34 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.text();
         })
         .then(html => {
-            // 1. Crear un contenedor temporal para analizar el nuevo HTML sin afectar el DOM actual.
             const tempContainer = document.createElement('div');
             tempContainer.innerHTML = html;
 
             const newTable = tempContainer.querySelector('table');
-            if (!newTable) return; // Si no hay tabla en la respuesta, no hacemos nada.
+            if (!newTable) {
+                scheduleNextCycle();
+                return;
+            }
 
             const currentTableBody = tableContainer.querySelector('tbody');
             const newTableBody = newTable.querySelector('tbody');
 
-            // 2. Obtener los IDs de las órdenes actuales y las nuevas.
             const currentOrderIds = new Set(Array.from(currentTableBody.querySelectorAll('tr[data-order-id]')).map(tr => tr.dataset.orderId));
             const newOrderIds = new Set(Array.from(newTableBody.querySelectorAll('tr[data-order-id]')).map(tr => tr.dataset.orderId));
 
-            // 3. Identificar órdenes que desaparecieron.
+            // 1. Manejo de órdenes que desaparecen (Periodo de Gracia)
             currentOrderIds.forEach(orderId => {
                 if (!newOrderIds.has(orderId) && !pendingDeletion[orderId]) {
                     const rowElement = document.getElementById(`order-row-${orderId}`);
                     if (rowElement) {
-                        console.log(`Orden ${orderId} desapareció. Iniciando periodo de gracia.`);
-                        
-                        // Mover la fila al principio de la tabla
                         rowElement.parentElement.prepend(rowElement);
-
-                        // Aplicar clase y variable CSS para la animación
                         rowElement.style.setProperty('--deletion-grace-period', `${DELETION_GRACE_PERIOD}ms`);
                         rowElement.classList.add('row-pending-deletion');
-                        
-                        // Iniciar temporizador para eliminar la fila después del periodo de gracia.
+
                         const timer = setTimeout(() => {
                             rowElement.remove();
                             delete pendingDeletion[orderId];
+                            renderPagination();
                         }, DELETION_GRACE_PERIOD);
 
                         pendingDeletion[orderId] = { timer, element: rowElement };
@@ -66,11 +119,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // 4. Identificar órdenes que reaparecieron o son nuevas.
+            // 2. Manejo de órdenes nuevas o que reaparecen
             newOrderIds.forEach(orderId => {
-                // Si la orden estaba pendiente de eliminación, cancelamos el proceso.
                 if (pendingDeletion[orderId]) {
-                    console.log(`Orden ${orderId} reapareció. Cancelando eliminación.`);
                     clearTimeout(pendingDeletion[orderId].timer);
                     pendingDeletion[orderId].element.style.removeProperty('--deletion-grace-period');
                     pendingDeletion[orderId].element.classList.remove('row-pending-deletion');
@@ -81,15 +132,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentRow = currentTableBody.querySelector(`#order-row-${orderId}`);
 
                 if (currentRow) {
-                    // La fila ya existe, actualizamos su contenido.
                     currentRow.innerHTML = newRow.innerHTML;
-                } else {
-                    // La fila es nueva, la añadimos al final de la tabla.
+                } else if (newRow) {
                     currentTableBody.appendChild(newRow);
                 }
             });
 
-            // Manejar el caso de tabla vacía
+            // 3. Manejo de estado vacío
             const noDataRow = newTableBody.querySelector('td[colspan]');
             const currentNoDataRow = currentTableBody.querySelector('td[colspan]');
             if (noDataRow && currentTableBody.children.length === 0) {
@@ -98,35 +147,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentNoDataRow.parentElement.remove();
             }
 
-            // 5. Re-ordenar la tabla: pendientes de eliminación arriba, luego las completadas.
-            const tableBody = tableContainer.querySelector('tbody');
-            // Solo seleccionamos filas con datos, no la de "no se encontraron ordenes".
-            const rows = Array.from(tableBody.querySelectorAll('tr[data-order-id]'));
-
+            // 4. Re-ordenar (eliminaciones pendientes primero, luego realizadas)
+            const rows = Array.from(currentTableBody.querySelectorAll('tr[data-order-id]'));
             if (rows.length > 0) {
                 rows.sort((a, b) => {
                     const getRank = (row) => {
-                        if (row.classList.contains('row-pending-deletion')) {
-                            return 0; // Máxima prioridad: a punto de ser eliminadas.
-                        }
-                        // Buscamos las insignias de estado "Realizado".
+                        if (row.classList.contains('row-pending-deletion')) return 0;
                         const doneBadges = row.querySelectorAll('.status-badge-done');
-                        if (doneBadges.length === 2) {
-                            return 1; // Segunda prioridad: completadas.
-                        }
-                        return 2; // Prioridad normal.
+                        if (doneBadges.length === 2) return 1;
+                        return 2;
                     };
                     return getRank(a) - getRank(b);
                 });
-                rows.forEach(row => tableBody.appendChild(row));
+                rows.forEach(row => currentTableBody.appendChild(row));
             }
+
+            // 5. Aplicar visibilidad de los 8 elementos y agendar siguiente cambio
+            renderPagination();
+            scheduleNextCycle();
         })
         .catch(error => {
             console.error('Fallo en la sincronización con la base de datos', error);
+            scheduleNextCycle();
         });
     }
 
-    // Ejecutar la primera vez y luego cada 5 segundos.
-    updateTable();
-    setInterval(updateTable, 20000);
+    // Inicialización inicial
+    renderPagination();
+    scheduleNextCycle();
 });

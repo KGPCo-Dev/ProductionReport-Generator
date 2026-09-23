@@ -32,8 +32,8 @@
         <div class="card-body py-4 px-3 px-md-4">
           <div class="stepper-wrapper">
             {% for step in tracking_results %}
-              <div class="stepper-item {% if step.is_scrap %}is-scrap{% elif step.is_complete %}completed{% elif step.is_in_progress %}in-progress{% else %}pending{% endif %}" data-bs-toggle="tooltip" data-bs-html="true" title="{{ step.tooltip }}">
-                <div class="step-counter">
+              <div class="stepper-item {% if step.is_scrap %}is-scrap{% elif step.is_complete %}completed{% elif step.is_in_progress %}in-progress{% else %}pending{% endif %}">
+                <div class="step-counter" data-bs-toggle="tooltip" data-bs-html="true" title="{{ step.tooltip }}">
                   {% if step.is_scrap %}
                     <i class="bi bi-x-lg"></i>
                   {% elif step.is_complete %}
