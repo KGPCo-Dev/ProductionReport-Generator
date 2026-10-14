@@ -4,11 +4,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.db.models import Max, Q, F
 from django.utils import timezone
+from datetime import timedelta
 from datetime import timezone as py_tz
 import zoneinfo
 from reports.queries import get_order_details
 from reports.cutting_services import (
-    get_single_order_cutting_results, get_cutting_machines, count_registered_orders, get_order_planning_details, get_assigned_orders_for_machine
+    get_single_order_cutting_results, get_cutting_machines, count_registered_orders, get_order_planning_details,
+    get_assigned_orders_for_machine, get_single_order_lastest_cutting_result
     )
 from reports.test2_services import get_single_order_last_test2_status
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
@@ -42,20 +44,33 @@ def get_requested_order(request):
 
     existing_assignation = get_single_order_cutting_results(build_id).exists()
 
-    # 1. Validar si la orden ya está en una cola de corte o en proceso de corte.
+    # 1. Validates if order is on cutting_machine queue.
     if existing_assignation:
         return JsonResponse({
             'success': False, 'error': 'Esta Orden ya se encuentra asignada a una maquina'
         }, status=400)
+
+    # 2. Get last cutting_ressult
+    lastest_cutting_result = get_single_order_lastest_cutting_result(build_id)
     
-    # 2. Validar el estatus más reciente en el piso de producción (Test 2).
+    # 3. Get last test_2 result to check if order was declarated as Scrap.
     last_prod_status = get_single_order_last_test2_status(build_id)
     if last_prod_status and last_prod_status.result_status != 'Scrap':
         return JsonResponse({
             'success': False,
             'error': f'La orden ya está en producción o terminada. Solo órdenes en "Scrap" pueden re-asignarse.'
         }, status=400)
-
+    else:
+        if last_prod_status and lastest_cutting_result:
+            last_prod_status.entered_date += timedelta(hours=6)
+            if  last_prod_status.entered_date < lastest_cutting_result.entered_date:
+                print("Date Validation Test")
+                print(f"Last test_result Date: {last_prod_status.entered_date}")
+                print(f"Last cutting_result Date: {lastest_cutting_result.entered_date}")
+                return JsonResponse({
+                    'sucess': False,
+                    'error': f'La orden no ha sido trabajada aun.'
+                }, status=400)
 
     planning_details = get_order_planning_details(build_id)
     priority_id = planning_details.priority if planning_details else 0
