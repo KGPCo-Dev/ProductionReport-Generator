@@ -1,178 +1,491 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const tableContainer = document.getElementById('dashboard-table-container');
-    const tableTypeSelect = document.getElementById('table_type');
+document.addEventListener('DOMContentLoaded', function () { const tableContainer = document.getElementById( 'dashboard-table-container' ); const tableTypeSelect = document.getElementById('table_type');
 
-    if (!tableContainer || !tableTypeSelect) return;
+if (!tableContainer || !tableTypeSelect) return;
 
-    // Configuración general
-    const pendingDeletion = {};
-    const DELETION_GRACE_PERIOD = 120000; // 2 minutos (120 seg)
-    const PAGE_SIZE = 8;                  // 8 registros por vista
-    const PAGE_DURATION = 20000;          // 20 segundos por vista
-    
-    let currentPage = 0;
-    let cycleTimer = null;
+// =========================================================
+// CONFIGURACIÓN
+// =========================================================
 
-    // Aplica la visibilidad de filas según la página actual
-    function renderPagination() {
-        const tableBody = tableContainer.querySelector('tbody');
-        if (!tableBody) return;
+const DELETION_GRACE_PERIOD = 120000; // 2 minutos
+const PAGE_SIZE = 8;                  // 8 órdenes por página
+const PAGE_DURATION = 20000;          // 20 segundos por página
+const REQUEST_TIMEOUT = 30000;        // Timeout de 30 segundos
+const INITIAL_RETRY_DELAY = 20000;    // Primer reintento: 20 segundos
+const MAX_RETRY_DELAY = 120000;        // Máximo: 2 minutos
+const MAX_RETRY_ATTEMPTS = 5;          // Reintentos consecutivos
 
-        const isSubassembly = tableTypeSelect.value === 'subassembly_status_table';
-        const rows = Array.from(tableBody.querySelectorAll('tr[data-order-id]'));
+// Órdenes pendientes de eliminación.
+const pendingDeletion = {};
 
-        // Si es máquinas o no hay filas, mostramos todo normalmente
-        if (!isSubassembly || rows.length === 0) {
-            rows.forEach(row => row.style.display = '');
+let currentPage = 0;
+let cycleTimer = null;
+let requestController = null;
+let requestInProgress = false;
+let pageIsLeaving = false;
+let retryDelay = INITIAL_RETRY_DELAY;
+let retryAttempts = 0;
+let activeRequestId = 0;
+
+// =========================================================
+// UTILIDADES
+// =========================================================
+
+function getCurrentRows() {
+    const tableBody = tableContainer.querySelector('tbody');
+
+    if (!tableBody) return [];
+
+    return Array.from(
+        tableBody.querySelectorAll('tr[data-order-id]')
+    );
+}
+
+function clearCycleTimer() {
+    if (cycleTimer !== null) {
+        clearTimeout(cycleTimer);
+        cycleTimer = null;
+    }
+}
+
+function getRowRank(row) {
+    if (row.classList.contains('row-pending-deletion')) {
+        return 0;
+    }
+
+    const doneBadges = row.querySelectorAll(
+        '.status-badge-done'
+    );
+
+    if (doneBadges.length === 2) {
+        return 1;
+    }
+
+    return 2;
+}
+
+function reorderRows(tableBody) {
+    const rows = Array.from(
+        tableBody.querySelectorAll('tr[data-order-id]')
+    );
+
+    rows.sort((a, b) => getRowRank(a) - getRowRank(b));
+
+    rows.forEach(row => tableBody.appendChild(row));
+}
+
+// =========================================================
+// PAGINACIÓN
+// =========================================================
+
+function renderPagination() {
+    const tableBody = tableContainer.querySelector('tbody');
+
+    if (!tableBody) return;
+
+    const isSubassembly =
+        tableTypeSelect.value === 'subassembly_status_table';
+
+    const rows = Array.from(
+        tableBody.querySelectorAll('tr[data-order-id]')
+    );
+
+    // En máquinas de corte se muestran todas las filas.
+    if (!isSubassembly || rows.length === 0) {
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+
+        return;
+    }
+
+    const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+
+    if (currentPage >= totalPages || currentPage < 0) {
+        currentPage = 0;
+    }
+
+    const startIndex = currentPage * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE;
+
+    rows.forEach((row, index) => {
+        row.style.display =
+            index >= startIndex && index < endIndex
+                ? ''
+                : 'none';
+    });
+}
+
+// =========================================================
+// PROGRAMACIÓN DE LA SIGUIENTE ACTUALIZACIÓN
+// =========================================================
+
+function scheduleNextCycle(delay = PAGE_DURATION) {
+    if (pageIsLeaving) return;
+
+    clearCycleTimer();
+
+    cycleTimer = setTimeout(() => {
+        cycleTimer = null;
+
+        if (pageIsLeaving) return;
+
+        // No iniciar una petición mientras exista otra activa.
+        if (requestInProgress) return;
+
+        const isSubassembly =
+            tableTypeSelect.value === 'subassembly_status_table';
+
+        const rows = getCurrentRows();
+
+        const totalPages =
+            Math.ceil(rows.length / PAGE_SIZE) || 1;
+
+        if (
+            isSubassembly &&
+            rows.length > PAGE_SIZE &&
+            currentPage + 1 < totalPages
+        ) {
+            // Mostrar la siguiente página del carrusel.
+            currentPage++;
+
+            renderPagination();
+            scheduleNextCycle();
+
+        } else {
+            // Terminó el carrusel: consultar nuevamente el servidor.
+            currentPage = 0;
+            updateTable();
+        }
+    }, delay);
+}
+
+// =========================================================
+// PERÍODO DE GRACIA PARA ÓRDENES DESAPARECIDAS
+// =========================================================
+
+function markOrderForDeletion(orderId, rowElement) {
+    if (pendingDeletion[orderId]) return;
+
+    // La fila debe seguir presente antes de marcarla.
+    if (!rowElement.isConnected) return;
+
+    rowElement.style.setProperty(
+        '--deletion-grace-period',
+        `${DELETION_GRACE_PERIOD}ms`
+    );
+
+    rowElement.classList.add('row-pending-deletion');
+
+    const timer = setTimeout(() => {
+        if (pendingDeletion[orderId]?.element === rowElement) {
+            rowElement.remove();
+            delete pendingDeletion[orderId];
+
+            renderPagination();
+        }
+    }, DELETION_GRACE_PERIOD);
+
+    pendingDeletion[orderId] = {
+        timer,
+        element: rowElement
+    };
+
+    // Las órdenes pendientes de eliminación aparecen primero.
+    const tableBody = tableContainer.querySelector('tbody');
+
+    if (tableBody) {
+        tableBody.prepend(rowElement);
+    }
+}
+
+function cancelPendingDeletion(orderId) {
+    const pending = pendingDeletion[orderId];
+
+    if (!pending) return;
+
+    clearTimeout(pending.timer);
+
+    pending.element.style.removeProperty(
+        '--deletion-grace-period'
+    );
+
+    pending.element.classList.remove('row-pending-deletion');
+
+    delete pendingDeletion[orderId];
+}
+
+// =========================================================
+// PROCESAMIENTO DE LA TABLA RECIBIDA
+// =========================================================
+
+function processTableResponse(html) {
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = html;
+
+    const newTable = tempContainer.querySelector('table');
+
+    if (!newTable) {
+        throw new Error(
+            'La respuesta del servidor no contiene una tabla.'
+        );
+    }
+
+    const newTableBody = newTable.querySelector('tbody');
+    const currentTableBody = tableContainer.querySelector('tbody');
+
+    if (!newTableBody || !currentTableBody) {
+        throw new Error(
+            'No se encontró el cuerpo de la tabla (tbody).'
+        );
+    }
+
+    // Identificar las órdenes actuales y las recibidas.
+    const currentRows = Array.from(
+        currentTableBody.querySelectorAll('tr[data-order-id]')
+    );
+
+    const newRows = Array.from(
+        newTableBody.querySelectorAll('tr[data-order-id]')
+    );
+
+    const currentOrderIds = new Set(
+        currentRows.map(row => row.dataset.orderId)
+    );
+
+    const newOrderIds = new Set(
+        newRows.map(row => row.dataset.orderId)
+    );
+
+    // 1. Órdenes que desaparecieron: iniciar período de gracia.
+    currentOrderIds.forEach(orderId => {
+        if (!newOrderIds.has(orderId)) {
+            const rowElement = currentRows.find(
+                row => row.dataset.orderId === orderId
+            );
+
+            if (rowElement) {
+                markOrderForDeletion(orderId, rowElement);
+            }
+        }
+    });
+
+    // 2. Órdenes nuevas o que reaparecieron.
+    newRows.forEach(newRow => {
+        const orderId = newRow.dataset.orderId;
+
+        // Si reaparece, cancelar la eliminación pendiente.
+        cancelPendingDeletion(orderId);
+
+        const currentRow = Array.from(
+            currentTableBody.querySelectorAll('tr[data-order-id]')
+        ).find(row => row.dataset.orderId === orderId);
+
+        if (currentRow) {
+            // Actualizar el contenido conservando el elemento DOM.
+            currentRow.innerHTML = newRow.innerHTML;
+
+        } else {
+            // Agregar la nueva orden.
+            currentTableBody.appendChild(newRow);
+        }
+    });
+
+    // 3. Manejo de la tabla sin datos.
+    const noDataRow = newTableBody.querySelector('td[colspan]');
+    const currentNoDataRow =
+        currentTableBody.querySelector('td[colspan]');
+
+    if (noDataRow && currentTableBody.children.length === 0) {
+        currentTableBody.innerHTML = newTableBody.innerHTML;
+
+    } else if (!noDataRow && currentNoDataRow) {
+        currentNoDataRow.parentElement.remove();
+    }
+
+    // 4. Reordenar: pendientes de eliminación, completadas y restantes.
+    reorderRows(currentTableBody);
+
+    // 5. Aplicar paginación.
+    renderPagination();
+}
+
+// =========================================================
+// ACTUALIZACIÓN AJAX CON TIMEOUT Y CONTROL DE ERRORES
+// =========================================================
+
+async function updateTable() {
+    if (pageIsLeaving || requestInProgress) return;
+
+    requestInProgress = true;
+
+    const requestId = ++activeRequestId;
+    const tableType = tableTypeSelect.value;
+
+    const url =
+        `${window.location.pathname}` +
+        `?partial=true` +
+        `&table_type=${encodeURIComponent(tableType)}` +
+        `&_=${Date.now()}`;
+
+    const controller = new AbortController();
+
+    requestController = controller;
+
+    let timedOut = false;
+    let nextDelay = PAGE_DURATION;
+
+    const timeoutId = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+    }, REQUEST_TIMEOUT);
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            signal: controller.signal,
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const html = await response.text();
+
+        if (pageIsLeaving || requestId !== activeRequestId) {
             return;
         }
 
-        const totalPages = Math.ceil(rows.length / PAGE_SIZE);
-        if (currentPage >= totalPages) {
-            currentPage = 0;
+        // Procesar el contenido recibido.
+        processTableResponse(html);
+
+        // Reiniciar los reintentos después de una actualización correcta.
+        retryAttempts = 0;
+        retryDelay = INITIAL_RETRY_DELAY;
+
+        nextDelay = PAGE_DURATION;
+
+    } catch (error) {
+        if (pageIsLeaving) return;
+
+        if (timedOut) {
+            console.warn(
+                `[Dashboard] Timeout después de ` +
+                `${REQUEST_TIMEOUT / 1000} segundos.`
+            );
+
+        } else if (error.name === 'AbortError') {
+            console.info(
+                '[Dashboard] Petición cancelada.'
+            );
+
+        } else {
+            console.error(
+                '[Dashboard] Error de actualización:',
+                error.message || error
+            );
         }
 
-        const startIndex = currentPage * PAGE_SIZE;
-        const endIndex = startIndex + PAGE_SIZE;
+        retryAttempts++;
 
-        rows.forEach((row, index) => {
-            if (index >= startIndex && index < endIndex) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        if (retryAttempts <= MAX_RETRY_ATTEMPTS) {
+            // Reintentos progresivos: 20, 40, 80, 120, 120 segundos.
+            nextDelay = retryDelay;
+
+            retryDelay = Math.min(
+                retryDelay * 2,
+                MAX_RETRY_DELAY
+            );
+
+            console.warn(
+                `[Dashboard] Reintento ${retryAttempts}/` +
+                `${MAX_RETRY_ATTEMPTS} en ` +
+                `${Math.round(nextDelay / 1000)} segundos.`
+            );
+
+        } else {
+            // Evitar reintentos demasiado frecuentes cuando el
+            // servidor sigue sin responder.
+            nextDelay = MAX_RETRY_DELAY;
+
+            retryDelay = MAX_RETRY_DELAY;
+
+            console.error(
+                '[Dashboard] Se alcanzó el límite de reintentos. ' +
+                'Se continuará intentando cada 120 segundos.'
+            );
+        }
+
+    } finally {
+        clearTimeout(timeoutId);
+
+        if (requestController === controller) {
+            requestController = null;
+        }
+
+        requestInProgress = false;
+
+        // La siguiente actualización se programa al terminar
+        // la petición actual, tanto si tuvo éxito como si falló.
+        if (!pageIsLeaving) {
+            scheduleNextCycle(nextDelay);
+        }
+    }
+}
+
+// =========================================================
+// CAMBIO DE TIPO DE TABLA
+// =========================================================
+
+tableTypeSelect.addEventListener('change', () => {
+    // Evitar que una respuesta de la tabla anterior se procese
+    // después de seleccionar otro tipo de tabla.
+    activeRequestId++;
+
+    if (requestController) {
+        requestController.abort();
     }
 
-    // Programa el siguiente paso del ciclo (20 segundos)
-    function scheduleNextCycle() {
-        if (cycleTimer) clearTimeout(cycleTimer);
+    currentPage = 0;
+    retryAttempts = 0;
+    retryDelay = INITIAL_RETRY_DELAY;
 
-        cycleTimer = setTimeout(() => {
-            const isSubassembly = tableTypeSelect.value === 'subassembly_status_table';
-            const tableBody = tableContainer.querySelector('tbody');
-            const rows = tableBody ? Array.from(tableBody.querySelectorAll('tr[data-order-id]')) : [];
-            const totalPages = Math.ceil(rows.length / PAGE_SIZE) || 1;
+    // El formulario original recarga la página al cambiar
+    // de tabla, por lo que no iniciamos otra petición aquí.
+});
 
-            if (isSubassembly && rows.length > PAGE_SIZE && (currentPage + 1) < totalPages) {
-                // Aún hay más páginas del query actual por mostrar
-                currentPage++;
-                renderPagination();
-                scheduleNextCycle();
-            } else {
-                // Finalizó el carrusel completo o es máquinas: consultamos de nuevo a la BD
-                currentPage = 0;
-                updateTable();
-            }
-        }, PAGE_DURATION);
+// =========================================================
+// LIMPIEZA AL ABANDONAR LA PÁGINA
+// =========================================================
+
+window.addEventListener('pagehide', () => {
+    pageIsLeaving = true;
+
+    clearCycleTimer();
+
+    activeRequestId++;
+
+    if (requestController) {
+        requestController.abort();
+        requestController = null;
     }
 
-    // Consulta la base de datos y actualiza el DOM
-    function updateTable() {
-        const tableType = tableTypeSelect.value;
-        const timestamp = new Date().getTime();
+    Object.values(pendingDeletion).forEach(item => {
+        clearTimeout(item.timer);
+    });
 
-        fetch(`${window.location.pathname}?partial=true&table_type=${tableType}&_=${timestamp}`, {
-            method: 'GET',
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache' }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al actualizar la tabla de monitoreo');
-            }
-            return response.text();
-        })
-        .then(html => {
-            const tempContainer = document.createElement('div');
-            tempContainer.innerHTML = html;
+    Object.keys(pendingDeletion).forEach(orderId => {
+        delete pendingDeletion[orderId];
+    });
+});
 
-            const newTable = tempContainer.querySelector('table');
-            if (!newTable) {
-                scheduleNextCycle();
-                return;
-            }
+// =========================================================
+// INICIALIZACIÓN
+// =========================================================
 
-            const currentTableBody = tableContainer.querySelector('tbody');
-            const newTableBody = newTable.querySelector('tbody');
-
-            const currentOrderIds = new Set(Array.from(currentTableBody.querySelectorAll('tr[data-order-id]')).map(tr => tr.dataset.orderId));
-            const newOrderIds = new Set(Array.from(newTableBody.querySelectorAll('tr[data-order-id]')).map(tr => tr.dataset.orderId));
-
-            // 1. Manejo de órdenes que desaparecen (Periodo de Gracia)
-            currentOrderIds.forEach(orderId => {
-                if (!newOrderIds.has(orderId) && !pendingDeletion[orderId]) {
-                    const rowElement = document.getElementById(`order-row-${orderId}`);
-                    if (rowElement) {
-                        rowElement.parentElement.prepend(rowElement);
-                        rowElement.style.setProperty('--deletion-grace-period', `${DELETION_GRACE_PERIOD}ms`);
-                        rowElement.classList.add('row-pending-deletion');
-
-                        const timer = setTimeout(() => {
-                            rowElement.remove();
-                            delete pendingDeletion[orderId];
-                            renderPagination();
-                        }, DELETION_GRACE_PERIOD);
-
-                        pendingDeletion[orderId] = { timer, element: rowElement };
-                    }
-                }
-            });
-
-            // 2. Manejo de órdenes nuevas o que reaparecen
-            newOrderIds.forEach(orderId => {
-                if (pendingDeletion[orderId]) {
-                    clearTimeout(pendingDeletion[orderId].timer);
-                    pendingDeletion[orderId].element.style.removeProperty('--deletion-grace-period');
-                    pendingDeletion[orderId].element.classList.remove('row-pending-deletion');
-                    delete pendingDeletion[orderId];
-                }
-
-                const newRow = newTableBody.querySelector(`#order-row-${orderId}`);
-                const currentRow = currentTableBody.querySelector(`#order-row-${orderId}`);
-
-                if (currentRow) {
-                    currentRow.innerHTML = newRow.innerHTML;
-                } else if (newRow) {
-                    currentTableBody.appendChild(newRow);
-                }
-            });
-
-            // 3. Manejo de estado vacío
-            const noDataRow = newTableBody.querySelector('td[colspan]');
-            const currentNoDataRow = currentTableBody.querySelector('td[colspan]');
-            if (noDataRow && currentTableBody.children.length === 0) {
-                currentTableBody.innerHTML = newTableBody.innerHTML;
-            } else if (!noDataRow && currentNoDataRow) {
-                currentNoDataRow.parentElement.remove();
-            }
-
-            // 4. Re-ordenar (eliminaciones pendientes primero, luego realizadas)
-            const rows = Array.from(currentTableBody.querySelectorAll('tr[data-order-id]'));
-            if (rows.length > 0) {
-                rows.sort((a, b) => {
-                    const getRank = (row) => {
-                        if (row.classList.contains('row-pending-deletion')) return 0;
-                        const doneBadges = row.querySelectorAll('.status-badge-done');
-                        if (doneBadges.length === 2) return 1;
-                        return 2;
-                    };
-                    return getRank(a) - getRank(b);
-                });
-                rows.forEach(row => currentTableBody.appendChild(row));
-            }
-
-            // 5. Aplicar visibilidad de los 8 elementos y agendar siguiente cambio
-            renderPagination();
-            scheduleNextCycle();
-        })
-        .catch(error => {
-            console.error('Fallo en la sincronización con la base de datos', error);
-            scheduleNextCycle();
-        });
-    }
-
-    // Inicialización inicial
-    renderPagination();
-    scheduleNextCycle();
+renderPagination();
+scheduleNextCycle();
 });
