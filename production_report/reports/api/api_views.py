@@ -1,10 +1,9 @@
+from operator import call
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from django.db import connection
-from ..api_queries import REPORT_CONFIG
-from .serializers import ReportInputSerializer
+from reports.api_queries import REPORT_CONFIG
 from core.utils.db_utils import dict_fetch_all
 
 class AllDataAPI(APIView):
@@ -12,18 +11,10 @@ class AllDataAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data = REPORT_CONFIG
         results = {}
-
-        for table_name in data:
-            config = REPORT_CONFIG[table_name]
-            query = config['query']
-
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-                consult = dict_fetch_all(cursor)
-            
-            results[table_name] = consult
+        for table_name, config in REPORT_CONFIG.items():
+            query_func = config['query']
+            results[table_name] = query_func() if callable(query_func) else query_func
         return Response(results)
 
 class TableAPI(APIView):
@@ -36,9 +27,6 @@ class TableAPI(APIView):
         if not config:
             return Response({'error': f'Tabla "{table_name}" no existe.'}, status=404)
         
-        query = config['query']
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            results = dict_fetch_all(cursor)
-        
+        query_func = config['query']
+        results = query_func() if callable(query_func) else query_func
         return Response(results)

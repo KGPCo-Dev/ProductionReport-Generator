@@ -1,132 +1,117 @@
-TEST2_RESULTS_QUERY = """
-SELECT
-  build_id,
-  employee_number,
-  production_shift,
-  production_cell,
-  SUBSTRING (workplace FROM 2 FOR 2) AS line,
-  (entered_date - INTERVAL '7 hours')::DATE AS date,
-  result_status
-FROM public.kgp_test2_results
-WHERE result_status IS DISTINCT FROM 'Rework'
-  AND result_status IS DISTINCT FROM 'Scrap'
-  AND workplace IS NOT NULL
-  AND workplace <> ''
-"""
-PRODUCTION_RESULTS_QUERY = """
-SELECT
-  results.entered_date::DATE,
-  results.employee_number,
-  results.build_id,
-  results.workplace,
-  SUBSTRING(results.workplace FROM 1 FOR 1) AS cell,
-  SUBSTRING (results.workplace FROM 2 FOR 2) AS line,
-  results.global_tether,
-  results.hold_time_total,
-  results.active_time_total,
-  results.time_total,
-  process.process_name,
-  results.process_start_time,
-  results.process_finish_time,
-  results.shift
-FROM public.kpg_production_process_results results
-JOIN public.kgp_production_process process ON results.process_id = process.process_id
-"""
+from core.utils.db_utils import OrderStatus
+from django.db.models import ExpressionWrapper
+from reports.models import (
+  KgpTest2Results, QualityAuditors, KgpCuttingResults,
+  KgpSubassemblyResults, KgpProductionOrders, KgpOrdersStatus
+)
+from django.db.models import F, Q, Value
+from django.db.models.functions import Substr, Cast
+from django.db.models import DateField
+from datetime import timedelta
+#---Manage consults that will be done by PowerBI to generate reports ----#
 
-SCRAP_RESULTS_QUERY = """
-SELECT
-  results.build_id,
-  process.process_name,
-  scrap.scrap_code,
-  scrap.scrap_description_spanish,
-  results.employee_number,
-  results.scrap_auditor,
-  results.tap_number,
-  results.global_tether,
-  results.shift,
-  results.workplace,
-  (results.entered_date - INTERVAL '7 hours')::DATE AS date
-FROM public.kgp_production_scrap results
-JOIN public.kgp_production_process process ON results.process_id = process.process_id
-JOIN public.kgp_scrap_codes scrap ON results.scrap_id = scrap.scrap_id
-"""
+def get_api_test2_results():
+  raw_data = (
+    KgpTest2Results.objects
+    .exclude(Q(workplace__isnull=True) | Q(workplace=''))
+    .annotate(
+      line=Substr('workplace', 2, 2),
+      date=Cast(
+        ExpressionWrapper(
+          F('entered_date') - Value(timedelta(hours=7)),
+          output_field=DateField()
+        ),
+        output_field=DateField()
+      ),
+    )
+    .values(
+      'build_id',
+      'employee_number',
+      'production_shift',
+      'production_cell',
+      'production_hour',
+      'line',
+      'date',
+      'result_status'
+    )
+  )
+  return list(raw_data)
 
-FAILS_RESULTS_QUERY = """
-SELECT
-  results.build_id,
-  (results.entered_date - INTERVAL '7hours')::DATE AS date,
-  results.global_tether,
-  SUBSTRING(results.workplace FROM 1 FOR 1) AS cell,
-  SUBSTRING(results.workplace FROM 2 FOR 2) AS line,
-  results.employee_number,
-  process.process_name,
-  fails.fail_description,
-  results.fail_amount,
-  results.shift
-FROM public.kpg_process_fails results
-JOIN public.kgp_process_fail_codes fails ON results.fail_id = fails.fail_id
-JOIN public.kgp_production_process process ON results.process_id = process.process_id
-"""
-PRODUCTION_PROCESS_QUERY = """
-SELECT *
-FROM public.kgp_production_process
-"""
+def get_api_quality_auditors():
+  raw_data = (
+    QualityAuditors.objects
+    .annotate(
+      auditor_number=F('employee_number')
+    )
+    .values(
+      'employee_name',
+      'shift',
+      'supervisor'
+    )
+  )
+  return list(raw_data)
 
-SCRAP_CODES_QUERY = """
-SELECT
-  process.process_name,
-  results.scrap_description,
-  results.scrap_code,
-  results.scrap_description_spanish
-FROM public.kgp_scrap_codes results
-JOIN public.kgp_production_process process ON results.process_id = process.process_id
-"""
+def get_api_cutting_results():
+  raw_data = (
+    KgpCuttingResults.objects
+    .all()
+    .annotate(
+      cutting_machine=F('machine__machine_spanish_name')
+    )
+    .values()
+  )
 
-QUALITY_AUDITORS_QUERY = """
-SELECT
-  employee_number AS "auditor_number",
-  employee_name,
-  shift,
-  supervisor
-FROM public.quality_auditors
-"""
+  results = list(raw_data)
 
-PRODUCTION_ORDERS_QUERY = """
-SELECT
-  build_id,
-  fiber_count,
-  tethers,
-  taps,
-  cable_type,
-  cable_length,
-  order_type,
-  installation_type
-FROM public.kgp_production_orders
-"""
+  for row in results:
+    row.pop('machine_id', None)
+
+  return results
+
+def get_api_subassembly_results():
+  raw_data = (
+    KgpSubassemblyResults.objects
+    .all()
+    .values()
+  )
+  return list(raw_data)
+
+def get_api_production_orders():
+  raw_data = (
+    KgpProductionOrders.objects
+    .all()
+    .values()
+  )
+  return list(raw_data)
+
+def get_api_orders_status():
+  raw_data = (
+    KgpOrdersStatus.objects
+    .values(
+      'status_code',
+      'status_description',
+      'status_description_spanish',
+    )
+  )
+  return list(raw_data)
 
 REPORT_CONFIG = { 
-    'molded_tethers_results': { 
-        'query': TEST2_RESULTS_QUERY
+    'produced_tethers': { 
+        'query': get_api_test2_results
     },
-    'yield_system_results': { 
-        'query': PRODUCTION_RESULTS_QUERY
-    },
-    'scrap_results': { 
-        'query': SCRAP_RESULTS_QUERY
-     },
-    'fails_results': { 
-        'query': FAILS_RESULTS_QUERY
-     },
-    'production_process': { 
-        'query': PRODUCTION_PROCESS_QUERY
-     },
-    'scrap_codes': { 
-        'query': SCRAP_CODES_QUERY
-     },
     'quality_auditors': { 
-        'query': QUALITY_AUDITORS_QUERY
-     },
+      'query': get_api_quality_auditors
+    },
     'production_orders': { 
-        'query': PRODUCTION_ORDERS_QUERY
-     },
+      'query': get_api_production_orders
+    },
+    'cutting_results': {
+      'query': get_api_cutting_results
+    },
+    'subassembly_results': {
+      'query': get_api_subassembly_results
+    },
+    'orders_status': {
+      'query': get_api_orders_status
+    },
  }
