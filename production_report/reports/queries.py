@@ -43,8 +43,8 @@ def get_tracking_results(build_id):
   #   test2 
   # results for progress view on order-tracker_preview.html ----#
 
-  # Step 1 Order has  been Assigned
-  # Step 2 Order has been Cutted
+  # Step 1 Order has been Assigned
+  # Step 2 Order has been Cuted
   # Step 3 KIT in WIP
   # Step 4 KIT Produced
   # Step 5 KIt Delivered
@@ -105,9 +105,7 @@ def get_tracking_results(build_id):
 
   step2_complete = (
     has_cutting and (
-      cutting_result.status_id == OrderStatus.DONE or
-      subassembly_result is not None or
-      test2_result is not None
+      cutting_result.status_id == OrderStatus.DONE
     )
   )
   tooltip_2 = f"<b>Orden Cortada</b><br>Máquina: {machine_name}<br>Área de WIP: {wip_area_code}"
