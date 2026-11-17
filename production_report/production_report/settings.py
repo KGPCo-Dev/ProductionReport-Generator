@@ -31,14 +31,20 @@ DEBUG_TOOLBAR_CONFIG = {
 }
 
 ALLOWED_HOSTS = [
+    'kgpco-mty-cqhhdtchh6c0hgb4.westus3-01.azurewebsites.net',
     'localhost',
     '127.0.0.1',
     os.getenv('DJANGO_ALLOWED_HOST', 'tu-app.kgpco.com')
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://kgpco-mty-cqhhdtchh6c0hgb4.westus3-01.azurewebsites.net',
+]
+
 if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
