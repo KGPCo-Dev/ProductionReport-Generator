@@ -27,12 +27,23 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '10.50.60.171',
+    '10.50.60.97',
     '172.26.60.62',
+    '192.168.0.7',
+    '192.168.0.9',
+    '192.168.0.6',
+    '10.50.60.118',
     os.getenv('DJANGO_ALLOWED_HOST', 'tu-app.kgpco.com')
 ]
 
 INTERNAL_IPS = [
-    "127.0.0.1",
+    '127.0.0.1',
+    'localhost',
+    '10.50.60.171',
+    '10.50.60.97',
+    '172.26.60.62',
+    '192.168.0.7',
+    '192.168.0.9',
 ]
 
 if not DEBUG:
@@ -60,6 +71,7 @@ INSTALLED_APPS = [
     
     # Development tools
     'django_bootstrap5',
+    'debug_toolbar',
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -82,6 +94,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.common.CommonMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -135,9 +148,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # ==============================================================================
 
 LANGUAGE_CODE = 'es-mx'
-TIME_ZONE = 'America/Monterrey'
+TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
-USE_TZ = True
+USE_TZ = False
+
 
 # ==============================================================================
 # STATIC AND MEDIA FILES MANAGEMENT
