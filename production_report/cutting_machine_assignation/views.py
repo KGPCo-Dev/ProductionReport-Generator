@@ -2,8 +2,17 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
-from django.db.models import Max
-from reports.queries import get_cutting_machines, get_order_details, get_order_planning_details, count_registered_orders, get_single_order_cutting_results
+from django.db.models import Max, Q, F
+from django.utils import timezone
+from datetime import timedelta
+from datetime import timezone as py_tz
+import zoneinfo
+from reports.queries import get_order_details
+from reports.cutting_services import (
+    get_single_order_cutting_results, get_cutting_machines, count_registered_orders, get_order_planning_details,
+    get_assigned_orders_for_machine, get_single_order_lastest_cutting_result
+    )
+from reports.test2_services import get_single_order_last_test2_status
 from reports.models import KgpCuttingResults, KgpCuttingMachines, KgpOrdersStatus
 import json
 
@@ -13,19 +22,9 @@ def is_cutting_lead(user):
 @login_required
 @user_passes_test(is_cutting_lead)
 def cutting_machine_assignation_view(request):
-
-    cutting_machines = []
-    cutting_machines_results = get_cutting_machines()
-
-    for machine in cutting_machines_results:
-        cutting_machines.append({
-            'machine_spanish_name': machine.machine_spanish_name,
-            'machine_code': machine.machine_code,
-            'assigned_orders_count': count_registered_orders(machine),
-        })
-
-    return render(request, 'cutting_machine_assignation/cutting_machine_assignation.html', {
-        'cutting_machines': cutting_machines,
+    cutting_machines_data = get_assigned_orders_for_machine()
+    return render(request, 'cutting_machine_assignation/cutting_machine_assignation.html',{
+        'cutting_machines_data': cutting_machines_data
     })
 
 @login_required
@@ -45,12 +44,33 @@ def get_requested_order(request):
 
     existing_assignation = get_single_order_cutting_results(build_id).exists()
 
+    # 1. Validates if order is on cutting_machine queue.
     if existing_assignation:
-
         return JsonResponse({
             'success': False, 'error': 'Esta Orden ya se encuentra asignada a una maquina'
         }, status=400)
+
+    # 2. Get last cutting_ressult
+    lastest_cutting_result = get_single_order_lastest_cutting_result(build_id)
     
+    # 3. Get last test_2 result to check if order was declarated as Scrap.
+    last_prod_status = get_single_order_last_test2_status(build_id)
+    if last_prod_status and last_prod_status.result_status != 'Scrap':
+        return JsonResponse({
+            'success': False,
+            'error': f'La orden ya está en producción o terminada. Solo órdenes en "Scrap" pueden re-asignarse.'
+        }, status=400)
+    else:
+        if last_prod_status and lastest_cutting_result:
+            last_prod_status.entered_date += timedelta(hours=6)
+            if  last_prod_status.entered_date < lastest_cutting_result.entered_date:
+                print("Date Validation Test")
+                print(f"Last test_result Date: {last_prod_status.entered_date}")
+                print(f"Last cutting_result Date: {lastest_cutting_result.entered_date}")
+                return JsonResponse({
+                    'sucess': False,
+                    'error': f'La orden no ha sido trabajada aun.'
+                }, status=400)
 
     planning_details = get_order_planning_details(build_id)
     priority_id = planning_details.priority if planning_details else 0
@@ -78,6 +98,7 @@ def get_requested_order(request):
 
 @login_required
 def save_machine_assignation(request):
+    # No es necesario definir la fecha aquí, la obtendremos dentro del bucle para mayor precisión.
 
     if not is_cutting_lead(request.user):
         return JsonResponse({
@@ -138,3 +159,67 @@ def save_machine_assignation(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
     return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+@login_required
+def remove_machine_assignation(request):
+    if not is_cutting_lead(request.user):
+        return JsonResponse({
+            'success': False, 
+            'error': ' No tienes permisos para relaizar esta acción.'
+        }, status=403)
+    
+    if request.method == 'POST':
+        try:
+            #---- Selected Order is validated to begi delete process ----#
+            data = json.loads(request.body)
+            build_id = data.get('build_id')
+
+            if not build_id:
+                return JsonResponse({
+                'success': False, 
+                'error': 'No se proporcionó número de orden.'
+                }, status=400)
+            
+            assignation = KgpCuttingResults.objects.filter(build_id=build_id, status_id=8).first()
+
+            if not assignation:
+                wip_exists = KgpCuttingResults.objects.filter(build_id=build_id, status_id=4).first()
+
+                if wip_exists:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'La orden ya está en proceso de corte'
+                    }, status=400)
+
+                return JsonResponse({
+                    'success': False,
+                    'error': 'La orden no se encuentra ctiva en ninguna cola.'
+                }, status=404)
+
+            #---- If order is on Queue status and has been founded we proceed ----#
+
+            machine_instance = assignation.machine
+            deleted_stack_id = assignation.stack_id
+
+            with transaction.atomic():
+
+                assignation.delete()
+                KgpCuttingResults.objects.filter(
+                    machine=machine_instance,
+                    status_id=8,
+                    stack_id__gt=deleted_stack_id
+                ).update(stack_id=F('stack_id') - 1)
+            return JsonResponse({
+                'success': True,
+                'message': 'Orden desasignada y cola reordenada.'
+            }, status=200)
+        
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    }, status=405)

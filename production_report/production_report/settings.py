@@ -23,17 +23,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-^xtffyt0m#ptf63))fiq6^d0#=
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-def show_toolbar(request):
-    return DEBUG
-
-DEBUG_TOOLBAR_CONFIG = { 
-    "SHOW_TOOLBAR_CALLBACK": show_toolbar,
-}
-
 ALLOWED_HOSTS = [
     'kgpco-mty-cqhhdtchh6c0hgb4.westus3-01.azurewebsites.net',
     'localhost',
     '127.0.0.1',
+    '10.50.60.171',
+    '172.26.60.62',
     os.getenv('DJANGO_ALLOWED_HOST', 'tu-app.kgpco.com')
 ]
 
@@ -44,6 +39,10 @@ CSRF_TRUSTED_ORIGINS = [
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
 if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
@@ -65,7 +64,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Development tools
-    'debug_toolbar',
     'django_bootstrap5',
     'rest_framework',
     'rest_framework.authtoken',
@@ -87,7 +85,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -211,8 +208,8 @@ REST_FRAMEWORK = {
 SITE_ID = 1
 
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 AUTHENTICATION_BACKENDS = [

@@ -125,3 +125,9 @@
    font-size: 0.85rem;
    font-weight: 500;
 }
+
+.row-pending-deletion {
+   opacity: 0.4;
+   background-color:#fffbf7!important;
+   transition: all 0.5s ease-in-out;
+}

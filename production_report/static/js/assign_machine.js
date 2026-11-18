@@ -8,53 +8,44 @@ const assignButton = document.querySelector("#btn-confirm-assignation");
 const searchBar = document.querySelector("#master-reel-form");
 const inputValue = document.getElementById("search-input");
 
-searchBar.addEventListener('submit', (event) => { 
+searchBar.addEventListener('submit', (event) => {
     event.preventDefault();
 
     masterReelValue = inputValue.value.trim();
+    const selectedMachine = machineSelector?.value;
+
+    const masterReelRegex = /^WO[A-Z0-9]{9}$/;
+    const masterReelCNN = /^C[A-Z0-9]{10}$/;
+    const isValidMasterReel = masterReelRegex.test(masterReelValue) ||  masterReelCNN.test(masterReelValue)
 
     console.log("Valor ingresado: ", masterReelValue)
 
+    if (!selectedMachine) {
+        Swal.fire(
+            "Máquina sin seleccionar",
+            "Selecciona una máquina antes de asignar un Master Reel.",
+            "warning"
+        );
+        return;
+    }
+
     if (!masterReelValue) {
-    Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
-    return;
+        Swal.fire("Atención", "Por favor ingresa un Master Reel para agregar esta orden.", "warning");
+        return;
+    }
+
+    if (!isValidMasterReel) {
+        Swal.fire(
+            "Formato de Master Reel Inválido",
+            "Favor de ingresar un formato de Master Reel valido.",
+            "warning"
+        );
+        return;
     }
 
     if (masterReelValue) {
         document.getElementById("search-result-container").style.display = "block";
     }
-
-   
-    // if (!buildId) {
-    //     return;
-    // }
-
-    // try {
-    //     const response = await fetch(`/cutting-machine-assignation/api/search-order/?build_id=${encodeURIComponent(buildId)}`);
-    //     const data = await response.json();
-
-    //     if (!response.ok) {
-    //         console.log("Response was not ok");
-    //         throw new Error(data.error);
-    //     }
-
-    //     console.log("Datos de la orden recibidos");
-
-    //     // ----Data is prepared to be displayed in FrontEnd---- //
-
-    //     currentSearchedOrder = data;
-    //     document.getElementById("current-build-id").textContent = data.build_id;
-    //     document.getElementById("current-cable-type").textContent = data.cable_length;
-
-    //     const lengthElem = document.getElementById("current-cable-length");
-    //     if (lengthElem) {
-    //         lengthElem.textContent = data.cable_length + 'ft';
-    //     }
-
-    // } catch (error) {
-    //     console.error("Error", error.message);
-    //     Swal.fire('Atencion', error.message, 'warning');
-    // }
 
 });
 
@@ -64,7 +55,7 @@ document.querySelector("#order-search-form").addEventListener('submit', async (e
 
     const buildInput = document.getElementById("build-id-input");
     const buildId = buildInput.value.trim();
-    
+
     if (!buildId) {
         return;
     }
@@ -116,20 +107,20 @@ document.querySelector("#order-search-form").addEventListener('submit', async (e
 
     renderOrdersTable();
 
- });
+});
 
-window.removeOrder = function(index) {
-        orders_to_assign.splice(index, 1);
-        renderOrdersTable();
-    };
+window.removeOrder = function (index) {
+    orders_to_assign.splice(index, 1);
+    renderOrdersTable();
+};
 
 function renderOrdersTable() {
     const tbody = document.getElementById("pending-orders-body");
     const section = document.getElementById("pending-orders-section");
 
-    tbody.innerHTML ="";
+    tbody.innerHTML = "";
 
-    if(orders_to_assign.length === 0) {
+    if (orders_to_assign.length === 0) {
         section.style.display = "none";
         return;
     }
@@ -140,7 +131,7 @@ function renderOrdersTable() {
         const tr = document.createElement("tr");
         tr.setAttribute('data-index', index);
         tr.style.position = 'relative';
-        tr.style.userSelect = 'none'; 
+        tr.style.userSelect = 'none';
         tr.innerHTML = `
             <td class="text-start">
                 <span class="drag-handle text-muted me-2" style="cursor: grab; display: inline-flex; align-items: center;">
@@ -224,7 +215,7 @@ function moveSwipe(e) {
         swipeStart.tr.style.transform = `translateX(${diffX}px)`;
 
         const threshold = swipeStart.width * 0.35;
-        if(diffX > threshold) {
+        if (diffX > threshold) {
             swipeStart.tr.classList.add('swipe-danger');
         } else {
             swipeStart.tr.classList.remove('swipe-danger');
@@ -255,7 +246,7 @@ function endSwipe(e) {
     if (isDeleted) {
         tr.style.transform = `translateX(${tr.offsetWidth}px)`
         tr.style.opacity = '0';
-        setTimeout (() => {
+        setTimeout(() => {
             removeOrder(index);
         }, 300);
     } else {
@@ -295,35 +286,188 @@ assignButton?.addEventListener("click", () => {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
         body: JSON.stringify(payload)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire('¡Éxito!', data.message, 'success');
-            
-            // Actualizar de forma inmediata el contador en la tarjeta de la máquina seleccionada
-            const activeCard = document.querySelector(`.machine-card[data-machine-code="${selectedMachine}"]`);
-            if (activeCard) {
-                const descElem = activeCard.querySelector('.description-text');
-                if (descElem) {
-                    const match = descElem.textContent.match(/\d+/);
-                    if (match) {
-                        const currentCount = parseInt(match[0]);
-                        const newCount = currentCount + orders_to_assign.length;
-                        descElem.textContent = `Ordenes Asignadas: ${newCount}`;
-                    }
-                }
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire('Error', data.error || 'Ocurrió un problema.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error en la peticion POST al asignar ordenes:', error);
+            Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
+        });
+});
+
+// Swipe and delete assigned order method
+
+document.addEventListener('DOMContentLoaded', () => {
+    const flexContainer = document.querySelector(".d-flex.justify-content-center.flex-wrap.gap-3.mt-2");
+
+    if (!flexContainer) return;
+
+    let detailsSwipeStart = null;
+
+    flexContainer.addEventListener('mousedown', startDetailsSwipe);
+    flexContainer.addEventListener('touchstart', startDetailsSwipe, { passive: true });
+
+    function startDetailsSwipe(e) {
+        const tr = e.target.closest('.machine-details-container tr');
+
+        if (!tr || tr.closest('thead')) return;
+
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+        detailsSwipeStart = {
+            startX: clientX,
+            startY: clientY,
+            tr: tr,
+            width: tr.offsetWidth,
+            isScrolling: false,
+            isSwiping: false
+        };
+
+        tr.classList.remove('swipe-animate');
+
+        document.addEventListener('mousemove', moveDetailsSwipe);
+        document.addEventListener('touchmove', moveDetailsSwipe, { passive: false });
+        document.addEventListener('mouseup', endDetailsSwipe);
+        document.addEventListener('touchend', endDetailsSwipe);
+    }
+
+    function moveDetailsSwipe(e) {
+        if (!detailsSwipeStart) return;
+
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+        const diffX = clientX - detailsSwipeStart.startX;
+        const diffY = clientY - detailsSwipeStart.startY;
+
+        if (!detailsSwipeStart.isSwiping && !detailsSwipeStart.isScrolling) {
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                detailsSwipeStart.isSwiping = true;
+            } else {
+                detailsSwipeStart.isScrolling = true;
+            }
+        }
+
+        if (detailsSwipeStart.isScrolling) return;
+
+        if (detailsSwipeStart.isSwiping && diffX > 0) {
+            if (e.cancelable) e.preventDefault();
+
+            const tr = detailsSwipeStart.tr;
+            tr.style.transform = `translateX(${diffX}px)`;
+
+            const threshold = detailsSwipeStart.width * 0.35;
+
+            if (diffX > threshold) {
+                tr.classList.add('swipe-danger');
+            } else {
+                tr.classList.remove('swipe-danger');
+            }
+        }
+    }
+
+    function endDetailsSwipe(e) {
+        if (!detailsSwipeStart) return;
+
+        const clientX = e.type.startsWith('touch') ? e.changedTouches[0].clientX : e.clientX;
+        const diffX = clientX - detailsSwipeStart.startX;
+        const threshold = detailsSwipeStart.width * 0.35;
+        const tr = detailsSwipeStart.tr;
+
+        document.removeEventListener('mousemove', moveDetailsSwipe);
+        document.removeEventListener('touchmove', moveDetailsSwipe);
+        document.removeEventListener('mouseup', endDetailsSwipe);
+        document.removeEventListener('touchend', endDetailsSwipe);
+
+        const isTriggered = detailsSwipeStart.isSwiping && diffX > threshold;
+        detailsSwipeStart = null;
+
+        tr.classList.add('swipe-animate');
+
+        if (isTriggered) {
+            const buildIdCell = tr.cells[0]
+            const buildId = buildIdCell ? buildIdCell.textContent.trim() : null;
+
+            if (!buildId) {
+                tr.style.transform = `translateX(0px)`;
+                tr.classList.remove('swipe-danger');
+                return;
             }
 
-            // ¡Limpiamos nuestro estado y repintamos la vista!
-            orders_to_assign = [];
-            renderOrdersTable();
-            
+            Swal.fire({
+                title: '¿Eliminar order?',
+                text: `¿Estás seguro de que deseas eliminar la orden ${buildId} de la Maquina?`,
+                icon: 'warning',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Si, desasignar',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    cancelButton: 'kgp-cancel-button',
+                    confirmButton: 'kgp-confirm-button'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                    Swal.fire({
+                        title: 'Procesando...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    fetch('/cutting-machine-assignation/api/remove-assignation/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                        body: JSON.stringify({
+                            build_id: buildId
+                        })
+                    }).then(
+                            response => response.json()
+                        ).then(data => {
+                            if (data.success) {
+                                Swal.fire(
+                                    'Orden desasignada.',
+                                    data.message,
+                                    'success'
+                                ).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire(
+                                    'Error',
+                                    data.error || 'Ocurrió un problema...',
+                                    'error'
+                                );
+
+                                tr.style.transform = `translateX(0px)`;
+                                tr.classList.remove('swipe-danger');
+                            }
+                        }).catch(error => {
+                            console.error('Error', error);
+                            Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
+
+                            tr.style.transform = `translateX(0px)`;
+                            tr.classList.remove('swipe-danger');
+                        });   
+                } else {
+                    tr.style.transform = `translateX(0px)`;
+                    tr.classList.remove('swipe-danger');
+                }
+            });
         } else {
-            Swal.fire('Error', data.error || 'Ocurrió un problema.', 'error');
+            tr.style.transform = `translateX(0px)`;
+            tr.classList.remove('swipe-danger');
         }
-    })
-    .catch(error => {
-        console.error('Error en la peticion POST al asignar ordenes:', error);
-        Swal.fire('Error de Red', 'No se pudo conectar con el servidor', 'error');
-    });
+    }
 });
+

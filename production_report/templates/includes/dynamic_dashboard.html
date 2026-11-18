@@ -1,4 +1,4 @@
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+p<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script>
 {% comment %}
@@ -81,7 +81,12 @@
                         title: { display: true, text: 'Resultados' }
                      },
                     x: { 
-                        grid: { display: false }
+                        grid: { display: false },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 30,
+                            autoSkip: true,
+                        }
                      }
                  }
               }

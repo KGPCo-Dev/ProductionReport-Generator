@@ -1,156 +1,28 @@
 from datetime import timedelta
-from django.db.models import Case, Value, When, IntegerField, FilteredRelation, Q, F, Subquery, OuterRef, TextField
-from django.db.models.expressions import RawSQL
-from reports.models import (KgpTest2Results, KgpFinaltestResults, KgpProductionOrders, KpgProcessFails, 
-                            KpgProductionProcessResults, KgpPlanningOrders, KgpCuttingMachines, 
-                            KgpCuttingResults, KgpSubassemblyResults)
-from core.utils.db_utils import clear_date
-from django.db.models import F
-import pandas as pd
-
-def get_single_order_test2_results(build_id):
-  return KgpTest2Results.objects.filter(
-    build=build_id
-  ).exclude(
-    result_status='Rework'
-  ).exclude(
-    workplace__isnull=True
-  ).exclude(
-    workplace__exact=''
-  ).select_related('build')
-
-def get_single_order_cutting_results(build_id):
-  return KgpCuttingResults.objects.filter(
-    build = build_id,
-    status_id__in=[8,4]
-  ).select_related('build')
-
-def get_machines_status():
-  active_results = KgpCuttingResults.objects.filter(
-    machine_id=OuterRef('machine_id'),
-    status_id__in=[4, 8]
-  ).annotate(
-    status_priority=Case(
-      When(status_id=4, then=Value(0)),
-      default=Value(1),
-      output_field=IntegerField(),
-    )
-  ).order_by(
-    'status_priority',
-    'stack_id'
+from reports.cutting_services import get_machines_status
+from core.utils.db_utils import OrderStatus
+from reports.subassembly_services import get_subassemble_table
+from reports.models import (
+  KgpProductionOrders,
+  KpgProcessFails,
+  KpgProductionProcessResults
   )
-
-
-  return list(
-    KgpCuttingMachines.objects.annotate(
-      build_id=Subquery(active_results.values('build_id')[:1]),
-      status_description=Subquery(active_results.values('status__status_description_spanish')[:1]),
-      cable_type=Subquery(active_results.values('build__cable_type')[:1]),
-      master_reel=Subquery(active_results.values('master_reel')[:1]),
-      stack_id=Subquery(active_results.values('stack_id')[:1]),
-      cutting_wip_code=Subquery(active_results.values('cutting_wip_area__cutting_wip_code')[:1]),
-      has_master_reel=Subquery(active_results.values('has_master_reel')[:1]),
-      raw_next_master_reel=Subquery(active_results.values('master_reel')[1:2])
-    ).annotate(
-      next_master_reel=Case(
-        When(raw_next_master_reel=F('master_reel'), then=Value(None)),
-        default=F('raw_next_master_reel'),
-        output_field=TextField()
-      )
-    ).values(
-      'machine_id',
-      'build_id',
-      'status_description',
-      'cable_type',
-      'master_reel',
-      'stack_id',
-      'cutting_wip_code',
-      'has_master_reel',
-      'next_master_reel'
-    ).order_by('machine_id')
+from reports.test2_services import (
+  get_fibers_report_date,
+  get_production_report_date,
+  get_scrap_report_data,
+  get_single_order_last_test2_status
   )
-
-def get_subassemble_table():
-  cutting_subquery = KgpCuttingResults.objects.filter(
-    build_id= OuterRef('build'),
-    status_id__in =[3, 4]
-  ).annotate(
-    status_priority=Case(
-      When(status_id=3, then=Value(0)),
-      default=Value(1),
-      output_field=IntegerField(),
-    )
-  ).order_by('status_priority', 'stack_id').values('status__status_description_spanish')[:1]
-  
-  subassembly_subquery = KgpSubassemblyResults.objects.filter(
-    build_id=OuterRef('build')
-  ).order_by('-id').values('status__status_description_spanish')[:1]
-
-  orders_data = (
-    KgpProductionOrders.objects.annotate(
-      cutting_status=Subquery(cutting_subquery),
-      sub_status=Subquery(subassembly_subquery),
-      order=F('build')
-    )
-    .filter(cutting_status__isnull=False)
-    .values(
-      'order',
-      'cutting_status',
-      'sub_status',
-      'cable_type',
-      'tethers'
-    )
+from reports.cutting_services import (
+  get_cutting_report_date,
+  get_single_order_lastest_cutting_result
   )
-  return list(orders_data)
-
-def get_test2_results(start_date, end_date):
-  return KgpTest2Results.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date
-  ).exclude(
-    result_status='Rework'
-  ).exclude(
-    workplace__isnull=True
-  ).exclude(
-    workplace__exact=''
-  )
-
-def get_finaltest_results(start_date, end_date):
-  return KgpFinaltestResults.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date
-    ).exclude(
-      workplace__isnull=True
-    ).exclude(
-      workplace__exact=''
-    )
-
-def get_scrap_results(start_date, end_date):
-  return KgpTest2Results.objects.filter(
-    result_status='Scrap',
-    entered_date__gte=start_date,
-    entered_date__lt=end_date
-  ).exclude(
-    workplace__exact=''
-  )
-
-def get_cutting_machines():
-  return KgpCuttingMachines.objects.all().order_by('machine_id')
-
-def count_registered_orders(machine):
-  return KgpCuttingResults.objects.filter(machine=machine, status_id__in=[8, 4]).count()
-
-def get_order_planning_details(build_id):
-  return KgpPlanningOrders.objects.filter(
-    build=build_id
-  ).only(
-    'priority', 
-    'production_deliver_date'
-  ).select_related('priority').first()
+from reports.subassembly_services import (
+  get_subassembly_report_date,
+  get_single_order_lastest_subassembly_results)
 
 def get_order_details(build_id):
   return KgpProductionOrders.objects.filter(
-
     build__iexact=build_id
   ).first()
 
@@ -164,133 +36,181 @@ def get_process_results(build_id):
     build=build_id
   ).select_related('process').order_by('-entered_date')
 
-def get_scrap_report_data(start_date_str, end_date_str, shift=""):
+def get_tracking_results(build_id):
+  #---- This function gets: 
+  #   cutting, 
+  #   subassy
+  #   test2 
+  # results for progress view on order-tracker_preview.html ----#
 
-  start_date = clear_date(start_date_str)
-  end_date = clear_date(end_date_str)
+  # Step 1 Order has been Assigned
+  # Step 2 Order has been Cuted
+  # Step 3 KIT in WIP
+  # Step 4 KIT Produced
+  # Step 5 KIt Delivered
+  # Step 6 Test 2 Result Registered
 
-  if start_date is None or end_date is None:
-    return []
-  
-  start_date = start_date + timedelta(hours=7)
-  end_date = end_date + timedelta(days=1, hours=7)
+  cutting_result = get_single_order_lastest_cutting_result(build_id)
 
-  queryset = KgpTest2Results.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date,
-    result_status='Scrap'
-  ).select_related('build')
+  print("Cutting Results")
+  print("Type:", type(cutting_result))
+  print("CR Value:", cutting_result)
+  if cutting_result:
+    print(vars(cutting_result))
+    last_cutting_date = cutting_result.entered_date
+  else:
+    last_cutting_date = None
 
-  if shift in ['1', '2']:
-    queryset = queryset.filter(production_shift=int(shift))
+  test2_result = get_single_order_last_test2_status(build_id)
 
-  data=[]
-  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  if (
+    test2_result
+    and test2_result.entered_date
+    and last_cutting_date
+    and test2_result.entered_date < last_cutting_date
+  ):
+    test2_result = None
 
-  for row in queryset:
-    production_date = row.entered_date - timedelta(hours=7)
+  subassembly_result = get_single_order_lastest_subassembly_results(build_id)
 
-    data.append({
-      "Orden": row.build.build if row.build else "-",
-      "Fecha de Registro": row.entered_date.strftime('%Y-%m-%d'),
-      "Hora de Registro": row.entered_date.strftime('%H:%M'),
-      "Dia": days[production_date.weekday()],
-      "Fecha de Incidencia": production_date.strftime('%Y-%m-%d'),
-      "Tipo de Cable": row.build.cable_type if row.build else "-",
-      "Empleado": row.employee_number if row.employee_number else "-",
-      "Estacion": row.workplace if row.workplace else "-",
-       "Hora": row.production_hour if row.production_hour else "-",
-       "Turno": row.production_shift if row.production_shift else "0" 
-    })
-  return data
+  if (
+    subassembly_result
+    and subassembly_result.entered_date
+    and last_cutting_date
+    and subassembly_result.entered_date < last_cutting_date
+  ):
+    subassembly_result = None
 
-def get_production_report_date(start_date_str, end_date_str, shift=""):
+  #---- STEP 1 ----#
+  has_cutting = cutting_result is not None
+  machine_name = (
+    cutting_result.machine.machine_number
+    if has_cutting and cutting_result.machine
+    else "Sin Asignar"
+  )
+  step1_complete = has_cutting and cutting_result.status_id in [
+    OrderStatus.QUEUE,
+    OrderStatus.WIP,
+    OrderStatus.DONE
+  ]
+  tooltip_1 = f"<b>Orden Asignada</b><br>Máquina: {machine_name}"
 
-  start_date = clear_date(start_date_str)
-  end_date = clear_date(end_date_str)
+  #---- STEP 2  ----#
+  wip_area_code = (
+    cutting_result.cutting_wip_area.cutting_wip_code
+    if has_cutting and cutting_result.cutting_wip_area
+    else "Sin área de WIP"
+  )
+  step2_in_progress = has_cutting and cutting_result.status_id == OrderStatus.WIP
 
-  if start_date is None or end_date is None:
-    return []
-  
-  start_date = start_date + timedelta(hours=7)
-  end_date = end_date + timedelta(days=1, hours=7)
+  step2_complete = (
+    has_cutting and (
+      cutting_result.status_id == OrderStatus.DONE
+    )
+  )
+  tooltip_2 = f"<b>Orden Cortada</b><br>Máquina: {machine_name}<br>Área de WIP: {wip_area_code}"
 
-  queryset = KgpTest2Results.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date,
-  ).exclude(
-    workplace__isnull=True
-  ).exclude(
-    workplace__exact=""
-  ).exclude(
-    production_cell__isnull=True
-  ).exclude(
-    result_status='Rework'
-  ).select_related('build').order_by('-entered_date')
+  #---- STEP 3 ----#
+  has_subassy = subassembly_result is not None
+  subassy_entered = (
+    subassembly_result.entered_date.strftime("%d/%m/%Y %H:%M")
+    if has_subassy and subassembly_result.entered_date
+    else "Sin registro"
+  )
+  step3_in_progress = has_subassy and subassembly_result.status_id == OrderStatus.WIP
 
-  if shift in ['1', '2']:
-    queryset = queryset.filter(production_shift=int(shift))
+  step3_complete = (
+    has_subassy and (
+      subassembly_result.status_id in [OrderStatus.WIP, OrderStatus.DONE, OrderStatus.KIT_DLV] or
+      subassembly_result.kit_delivered or
+      test2_result is not None
+    )
+  )
+  tooltip_3 = f"<b>KIT en proceso</b><br>Fecha Inicio: {subassy_entered}"
 
-  data=[]
-  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  #---- STEP 4 ----#
+  finish_dt = (
+    subassembly_result.finish_date.strftime("%d/%m/%Y %H:%M")
+    if has_subassy and subassembly_result.finish_shift
+    else "N/A"
+  )
 
-  for row in queryset:
-    production_date = row.entered_date - timedelta(hours=7)
-    data.append({
-      "Orden": row.build.build if row.build.build else "-",
-      "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
-      "Hora de Registro": row.entered_date.strftime("%H:%M"),
-      "Dia de Produccion": days[production_date.weekday()],
-      "Tipo de Cable": row.build.cable_type if row.build else "-",
-      "Empleado": row.employee_number if row.employee_number else "-" ,
-      "Estacion":row.workplace if row.workplace else "-",
-      "Celda": row.production_cell if row.production_cell else "-",
-      "Turno": row.production_shift if row.production_shift else "-"
-    })
-  return data
+  finish_shift = (
+    subassembly_result.finish_shift
+    if has_subassy and subassembly_result.finish_shift
+    else "N/A"
+  )
+  step4_in_progress = has_subassy and subassembly_result.status_id == OrderStatus.WIP and subassembly_result.finish_date is not None
 
-def get_fibers_report_date(start_date_str, end_date_str, shift=""):
-  start_date = clear_date(start_date_str)
-  end_date = clear_date(end_date_str)
+  step4_complete = (
+    has_subassy and (
+      subassembly_result.status_id in [OrderStatus.DONE, OrderStatus.KIT_DLV] or
+      subassembly_result.finish_date is not None or
+      subassembly_result.kit_delivered or
+      test2_result is not None
+    )
+  )
+  tooltip_4 = f"<b>KIT Armado</b><br>Armado el: {finish_dt}<br>Turno: {finish_shift}"
 
-  if start_date is None or end_date is None:
-    return []
-  
-  start_date = start_date + timedelta(hours=7)
-  end_date = end_date + timedelta(days=1, hours=7)
+  #---- STEP 5 ----#
+  del_cell = (
+    subassembly_result.delivered_cell
+    if has_subassy and subassembly_result.delivered_employee
+    else "N/A"
+  )
+  del_emp = (
+    subassembly_result.delivered_employee
+    if has_subassy and subassembly_result.delivered_employee
+    else "N/A"
+  )
+  step5_in_progress = has_subassy and subassembly_result.status_id == OrderStatus.DONE and not subassembly_result.kit_delivered
 
-  queryset = KgpFinaltestResults.objects.filter(
-    entered_date__gte=start_date,
-    entered_date__lt=end_date
-  ).exclude(
-    workplace__isnull=True,
-    workplace__exact=""
-  ).select_related('build')
+  step5_complete = (
+    has_subassy and (
+      subassembly_result.kit_delivered is True or
+      subassembly_result.status_id == OrderStatus.KIT_DLV or
+      subassembly_result.delivered_date is not None or
+      test2_result is not None
+    )
+  )
+  tooltip_5 = f"<b>KIT Entregado</b><br>Celda: {del_cell}<br>Recibe: {del_emp}"
 
-  if shift in ['1', '2']:
-    queryset= queryset.filter(production_shift=int(shift))
+  #---- STEP 6 ----#
+  has_test2 = test2_result is not None
+  prod_cell = (
+    test2_result.production_cell
+    if has_test2 and test2_result.production_cell
+    else "N/A"
+  )
+  step6_is_scrap = has_test2 and (test2_result.result_status == "Scrap" or getattr(test2_result, 'scrap', False) is True)
 
-  data =[]
-  days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  tethers_completed = test2_result.tethers_completed if has_test2 and test2_result.tethers_completed is not None else 0
+  tethers_total = test2_result.tethers_total if has_test2 and test2_result.tethers_total is not None else 0
 
-  for row in queryset:
-    passed_fibers = row.passed_fibers or 0
-    failed_fibers = row.failed_fibers or 0
-    done_fibers = failed_fibers +passed_fibers
+  if has_test2 and not step6_is_scrap:
+    if tethers_total > 0:
+      step6_complete = tethers_completed >= tethers_total
+      step6_in_progress = tethers_completed > 0 and tethers_completed < tethers_total
+    else:
+      step6_complete = test2_result.result_status == "Pass"
+      step6_in_progress = not step6_complete
+  else:
+    step6_complete = False
+    step6_in_progress = False
 
-    data.append({
-      "Orden": row.build.build if row.build.build else "-",
-      "Empleado": row.employee_number if row.employee_number else "-",
-      "Mesa": row.workplace if row.workplace else "-",
-      "Turno": row.production_shift if row.production_shift else "-",
-      "Fecha de Registro": row.entered_date.strftime("%Y-%m-%d"),
-      "Hora de Registro": row.entered_date.strftime("%H:%M"),
-      "Fibras Totales": row.build.fiber_count if row.build.fiber_count else "-",
-      "Fibras Probadas": passed_fibers if passed_fibers else "-",
-      "Fbras Fallidas": failed_fibers if failed_fibers else "-",
-      "Estatus": "Terminado" if done_fibers >= row.build.fiber_count else "No Terminado" 
-    })
-  return data
+  tooltip_6 = f"<b>Prueba 2</b><br>Celda: {prod_cell}"
+  if has_test2 and tethers_total > 0:
+    tooltip_6 += f"<br>Avance: {tethers_completed}/{tethers_total}" 
+
+  tracking_steps = [
+    {"name": "Orden Asignada", "is_complete": step1_complete, "is_in_progress": False, "is_scrap": False, "tooltip": tooltip_1},
+    {"name": "Orden Cortada", "is_complete": step2_complete, "is_in_progress": step2_in_progress, "is_scrap": False, "tooltip": tooltip_2},
+    {"name": "KIT en proceso", "is_complete": step3_complete, "is_in_progress": step3_in_progress, "is_scrap": False, "tooltip": tooltip_3},
+    {"name": "KIT Armado", "is_complete": step4_complete, "is_in_progress": step4_in_progress, "is_scrap": False, "tooltip": tooltip_4},
+    {"name": "KIT Entregado", "is_complete": step5_complete, "is_in_progress": step5_in_progress, "is_scrap": False, "tooltip": tooltip_5},
+    {"name": "Prueba 2", "is_complete": step6_complete, "is_in_progress": step6_in_progress, "is_scrap": step6_is_scrap, "tooltip": tooltip_6},
+  ]
+  return tracking_steps
 
 
 REPORT_CONFIG = { 
@@ -299,7 +219,7 @@ REPORT_CONFIG = {
         'filename': 'Reporte de Scrap',
         'sheet_name': 'Scrap',
         'chart_config': { 
-            'date_col': 'Fecha del Scrap',
+            'date_col': 'Dia de Scrap',
             'hour_col': 'Hora',
             'label': 'Ordenes Scrap',
             'base_color': '#da1d1df1',
@@ -312,7 +232,7 @@ REPORT_CONFIG = {
         'filename': 'Reporte Final Test',
         'sheet_name': 'Final Test',
         'chart_config': { 
-            'date_col': 'Fecha de Registro',
+            'date_col': 'Dia de Produccion',
             'hour_col': 'Hora',
             'label': 'Fibras',
             'base_color': '#29b457cb',
@@ -325,11 +245,37 @@ REPORT_CONFIG = {
         'filename': 'Reporte de Produccion',
         'sheet_name': 'Produccion',
         'chart_config': { 
-            'date_col': 'Fecha de Registro',
+            'date_col': 'Dia de Produccion',
             'hour_col': 'Hora',
             'label': 'Tethers Producidos',
             'base_color': '#0d6efd',
             'lighter_color': 'rgba(13, 110, 253, 0.8)',
+            'darker_color': 'rgba(13, 110, 253, 0.3)'
+         }
+    },
+    'cutting_report': { 
+        'query': get_cutting_report_date,
+        'filename': 'Reporte de Corte',
+        'sheet_name': 'Produccion',
+        'chart_config': { 
+            'date_col': 'Dia de Produccion',
+            'hour_col': 'Hora',
+            'label': 'Ordenes Cortadas',
+            'base_color': '#0d6efd',
+            'lighter_color': 'rgba(13, 110, 253, 0.8)',
+            'darker_color': 'rgba(13, 110, 253, 0.3)'
+         }
+    },
+    'subassembly_report': { 
+        'query': get_subassembly_report_date,
+        'filename': 'Reporte de Sub-Ensamble',
+        'sheet_name': 'Produccion',
+        'chart_config': { 
+            'date_col': 'Dia de Produccion',
+            'hour_col': 'Hora',
+            'label': 'Kits Producidos',
+            'base_color': '#0d6efd',
+          'lighter_color': 'rgba(13, 110, 253, 0.8)',
             'darker_color': 'rgba(13, 110, 253, 0.3)'
          }
     },

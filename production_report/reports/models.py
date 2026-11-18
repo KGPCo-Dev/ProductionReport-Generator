@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class ProcessNames(models.TextChoices):
     ACCESS_1 = 'ACCESS_1', 'Access 1'
@@ -347,6 +348,7 @@ class KgpCuttingMachines(models.Model):
     machine_code = models.TextField()
     machine_english_name = models.TextField(blank=True, null=True)
     machine_spanish_name = models.TextField(blank=True, null=True)
+    machine_number = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -681,6 +683,7 @@ class KgpSubassembleKitResults(models.Model):
     build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, db_column='build_id')
     entered_date = models.DateTimeField(blank=True, null=True)
     employee_number = models.TextField(blank=True, null=True)
+    delivered_cell = models.SmallIntegerField(blank=True, null=True)
     cable_type = models.TextField(blank=True, null=True)
     status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True, db_column='status_id')
     registered_tethers = models.BigIntegerField(blank=True, null=True)
@@ -694,16 +697,24 @@ class KgpSubassembleKitResults(models.Model):
 class KgpCuttingResults(models.Model):
     id = models.BigAutoField(primary_key=True)
     build = models.ForeignKey('KgpProductionOrders', models.DO_NOTHING, to_field='build', db_column='build_id')
-    entered_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    entered_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    employee_number = models.SmallIntegerField(blank=True, null=True)
     machine = models.ForeignKey('KgpCuttingMachines', models.DO_NOTHING, blank=True, null=True)
     master_reel = models.TextField(blank=True, null=True)
     status = models.ForeignKey('KgpOrdersStatus', models.DO_NOTHING, blank=True, null=True)
     scrap = models.BooleanField(blank=True, null=True)
     cutting_wip_area = models.ForeignKey('KgpCuttingWipAreas', models.DO_NOTHING, db_column='cutting_wip_area', blank=True, null=True)
     stack_id = models.SmallIntegerField(blank=True, null=True, db_column='stack_id')
+    start_shift = models.SmallIntegerField(blank=True, null=True)
+    assignation_shift = models.SmallIntegerField(blank=True, null=True) 
     production_shift = models.SmallIntegerField(blank=True, null=True)
+    start_feet = models.SmallIntegerField(blank=True, null=True)
+    finish_feet = models.SmallIntegerField(blank=True, null=True)
+    length_gap = models.TextField(blank=True, null=True)
     completed_date = models.DateTimeField(blank=True, null=True)
     has_master_reel = models.BooleanField()
+    start_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    finish_date = models.DateTimeField(default=timezone.now, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -727,9 +738,15 @@ class KgpSubassemblyResults(models.Model):
     build = models.ForeignKey(KgpProductionOrders, models.DO_NOTHING, db_column='build_id', to_field='build')
     kit_delivered = models.BooleanField(blank=True, null=True)
     employee_number = models.BigIntegerField(blank=True, null=True)
-    updated_date = models.TextField(blank=True, null=True)
     scrap = models.BooleanField(blank=True, null=True)
     status = models.ForeignKey(KgpOrdersStatus, models.DO_NOTHING, blank=True, null=True)
+    delivered_cell = models.SmallIntegerField(blank=True, null=True)
+    delivered_employee = models.SmallIntegerField(blank=True, null=True)
+    finish_date = models.DateTimeField()
+    delivered_date = models.DateTimeField()
+    start_shift = models.SmallIntegerField(blank=True, null=True)
+    finish_shift = models.SmallIntegerField(blank=True, null=True)
+    delivered_shift = models.SmallIntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

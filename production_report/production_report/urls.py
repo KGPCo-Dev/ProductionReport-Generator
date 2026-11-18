@@ -12,12 +12,11 @@ urlpatterns = [
     path('live-dashboards/', include('live_dashboards.urls')),
     path('cutting-machine-assignation/', include('cutting_machine_assignation.urls')),
     path('api-token-auth/', dfr_views.obtain_auth_token),
-    #path('api/data/<str:table_name>/', TableAPI.as_view(), name='api_all_data'),
+    path('api/data/<str:table_name>/', TableAPI.as_view(), name='api_all_data'),
     path('accounts/', include('allauth.urls')),
 ]
 
 if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [ 
-        path('__debug__/', include(debug_toolbar.urls)),
-     ] + urlpatterns
+    urlpatterns += [
+        path('__debug__/', include('debug_toolbar.urls')),
+    ]
